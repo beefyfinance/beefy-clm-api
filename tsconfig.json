@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "ES2022"
+    ],
+    "module": "NodeNext",
+    "target": "ES2021",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "checkJs": false,
+    "strict": true,
+    "useDefineForClassFields": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "useUnknownInCatchVariables": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "noErrorTruncation": true,
+    "outDir": "build",
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+    "./node_modules"
+  ],
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+      "allowUnusedLabels": true,
+      "allowUnreachableCode": true,
+      "noUnusedLocals": false,
+      "noUnusedParameters": false,
+      "importsNotUsedAsValues": "remove"
+    }
+  }
+}
