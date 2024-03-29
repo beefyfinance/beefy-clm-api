@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
+import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifySchema } from 'fastify';
 import { S } from 'fluent-json-schema';
 import { addressSchema } from '../schema/address.js';
 import { type ChainId, getChainOrUndefined } from '../config/chains.js';
@@ -7,30 +7,30 @@ import { getRpcClient } from '../utils/rpc.js';
 import { providerSchema } from '../schema/provider.js';
 import { chainSchema } from '../schema/chain.js';
 import { type ProviderId } from '../config/providers.js';
-import { getVaults } from '../utils/vaults.js';
+import { getVaults, type Vault } from '../utils/vaults.js';
 import { processProvider } from '../providers/index.js';
 
-export type BalanceQueryString = {
+export type BalancesQueryString = {
   users?: string[];
 };
 
-const balanceQueryString = S.object().prop(
+const balancesQueryString = S.object().prop(
   'users',
   S.array().items(addressSchema).description('User addresses to query, leave blank for all users')
 );
 
-type BalanceParams = {
+type AllBalancesParams = {
   provider: ProviderId;
   chain: ChainId;
   block: string;
 };
 
-const balanceParams = S.object()
+const allBalancesParams = S.object()
   .prop('provider', providerSchema.required().description('LRT provider'))
   .prop('chain', chainSchema.required().description('Chain to query balances for'))
   .prop('block', bigintSchema.required().description('Block number to query balances at'));
 
-const balanceSuccessResponse = S.object()
+const balancesSuccessResponse = S.object()
   .examples([
     {
       result: [
@@ -72,56 +72,104 @@ const balanceSuccessResponse = S.object()
       .prop('vaults', S.array().items(S.string()))
   );
 
-export const balanceSchema: FastifySchema = {
-  querystring: balanceQueryString,
-  params: balanceParams,
+const allBalancesSchema: FastifySchema = {
+  querystring: balancesQueryString,
+  params: allBalancesParams,
   response: {
-    200: balanceSuccessResponse,
+    200: balancesSuccessResponse,
   },
 };
 
-type BalanceRoute = { Querystring: BalanceQueryString; Params: BalanceParams };
+type AllBalancesRoute = { Querystring: BalancesQueryString; Params: AllBalancesParams };
+
+type SingleBalancesParams = AllBalancesParams & {
+  vault: string;
+};
+
+const singleBalancesParams = allBalancesParams.prop(
+  'vault',
+  S.string().required().description('Vault id to query balances for')
+);
+
+const singleBalancesSchema: FastifySchema = {
+  querystring: balancesQueryString,
+  params: singleBalancesParams,
+  response: {
+    200: balancesSuccessResponse,
+  },
+};
+
+type SingleBalancesRoute = { Querystring: BalancesQueryString; Params: SingleBalancesParams };
+
+async function handleBalances(
+  reply: FastifyReply,
+  chainId: ChainId,
+  providerId: ProviderId,
+  blockNo: string,
+  users: string[],
+  vaultsFilter?: ((v: Vault) => boolean) | undefined
+) {
+  const chain = getChainOrUndefined(chainId);
+  if (!chain) {
+    reply.status(404);
+    return { error: 'Chain not found' };
+  }
+
+  const provider = chain.providers[providerId];
+  if (!provider) {
+    reply.status(404);
+    return { error: 'Provider not found' };
+  }
+
+  const publicClient = getRpcClient(chain.id);
+  const block = await publicClient.getBlock({
+    blockNumber: BigInt(blockNo),
+    includeTransactions: false,
+  });
+
+  let vaults = await getVaults(chain.id);
+  if (vaultsFilter) {
+    vaults = vaults.filter(vaultsFilter);
+  }
+
+  const balances = await processProvider(providerId, chain.id, publicClient, block, vaults, users);
+
+  reply.header('cache-control', 'public, max-age=86400, s-maxage=86400');
+
+  return balances;
+}
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
-  instance.get<BalanceRoute>(
+  instance.get<AllBalancesRoute>(
     '/:provider/:chain/:block',
-    { schema: balanceSchema },
+    { schema: allBalancesSchema },
     async (request, reply) => {
-      const chain = getChainOrUndefined(request.params.chain);
-      if (!chain) {
-        reply.status(404);
-        return { error: 'Chain not found' };
-      }
-
-      const provider = chain.providers[request.params.provider];
-      if (!provider) {
-        reply.status(404);
-        return { error: 'Provider not found' };
-      }
-
-      const publicClient = getRpcClient(chain.id);
-      const block = await publicClient.getBlock({
-        blockNumber: BigInt(request.params.block),
-        includeTransactions: false,
-      });
-
-      const vaults = await getVaults(chain.id);
-      const balances = await processProvider(
+      return handleBalances(
+        reply,
+        request.params.chain,
         request.params.provider,
-        chain.id,
-        publicClient,
-        block,
-        vaults,
+        request.params.block,
         request.query.users || []
       );
+    }
+  );
 
-      reply.header('cache-control', 'public, max-age=86400, s-maxage=86400');
-
-      return balances;
+  instance.get<SingleBalancesRoute>(
+    '/:provider/:chain/:block/:vault',
+    { schema: singleBalancesSchema },
+    async (request, reply) => {
+      return handleBalances(
+        reply,
+        request.params.chain,
+        request.params.provider,
+        request.params.block,
+        request.query.users || [],
+        v => v.id === request.params.vault
+      );
     }
   );
 
