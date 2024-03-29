@@ -132,7 +132,7 @@ async function handleBalances(
     vaults = vaults.filter(vaultsFilter);
   }
 
-  if (vaults.length) {
+  if (vaults.length === 0) {
     reply.status(404);
     return { error: 'Vault not found' };
   }
