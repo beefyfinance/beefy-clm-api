@@ -1,4 +1,4 @@
-import type { IPlatform, IPlatformConstructor, PlatformBalance } from './types.js';
+import type { BalanceResult, IPlatform, IPlatformConstructor } from './types.js';
 import type { Vault } from '../utils/vaults.js';
 import { type Address, type GetBlockReturnType, type PublicClient } from 'viem';
 import { getWantFromVault } from './helpers.js';
@@ -13,15 +13,15 @@ class AavePlatform implements IPlatform {
     protected readonly block: GetBlockReturnType
   ) {}
 
-  public async getBalances(vault: Vault, users: Address[]): Promise<PlatformBalance[]> {
-    const { wantAddress, wantBalances } = await getWantFromVault(
+  public async getBalances(vault: Vault, users: Address[]): Promise<BalanceResult> {
+    const { wantAddress, wantTotalBalance, wantBalances } = await getWantFromVault(
       vault,
       users,
       this.block.number,
       this.publicClient
     );
 
-    return users.map((user, i) => {
+    const userBalances = users.map((user, i) => {
       const userWantBalance = wantBalances[i]!;
 
       return {
@@ -30,6 +30,13 @@ class AavePlatform implements IPlatform {
         balance: userWantBalance,
       };
     });
+
+    const vaultBalances = [{ token: wantAddress, balance: wantTotalBalance }];
+
+    return {
+      users: userBalances,
+      vault: vaultBalances,
+    };
   }
 }
 

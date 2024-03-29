@@ -1,4 +1,4 @@
-import type { IPlatform, IPlatformConstructor, PlatformBalance } from './types.js';
+import type { BalanceResult, IPlatform, IPlatformConstructor } from './types.js';
 import type { ChainId } from '../config/chains.js';
 import { type Address, type GetBlockReturnType, getContract, type PublicClient } from 'viem';
 import type { Vault } from '../utils/vaults.js';
@@ -16,14 +16,13 @@ class BalancerPlatform implements IPlatform {
     protected readonly block: GetBlockReturnType
   ) {}
 
-  public async getBalances(vault: Vault, users: Address[]): Promise<PlatformBalance[]> {
+  public async getBalances(vault: Vault, users: Address[]): Promise<BalanceResult> {
     const callParams = { blockNumber: this.block.number };
-    const { wantAddress: balancerPoolAddress, wantBalances } = await getWantFromVault(
-      vault,
-      users,
-      this.block.number,
-      this.publicClient
-    );
+    const {
+      wantAddress: balancerPoolAddress,
+      wantTotalBalance,
+      wantBalances,
+    } = await getWantFromVault(vault, users, this.block.number, this.publicClient);
 
     const balancerPool = getContract({
       client: this.publicClient,
@@ -60,7 +59,12 @@ class BalancerPlatform implements IPlatform {
     );
     defaultLogger.debug({ poolTokenBalances });
 
-    return users.flatMap((user, i) => {
+    const vaultBalances = poolTokenBalances.map(({ token, balance }) => ({
+      token,
+      balance: (balance * wantTotalBalance) / balancerTotalSupply,
+    }));
+
+    const userBalances = users.flatMap((user, i) => {
       const userWantBalance = wantBalances[i]!;
       return poolTokenBalances.map(({ token, balance }) => ({
         user,
@@ -68,6 +72,11 @@ class BalancerPlatform implements IPlatform {
         balance: (balance * userWantBalance) / balancerTotalSupply,
       }));
     });
+
+    return {
+      users: userBalances,
+      vault: vaultBalances,
+    };
   }
 }
 

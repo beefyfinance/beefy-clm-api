@@ -8,6 +8,11 @@ export type UserBalance = {
   effective_balance: bigint;
 };
 
+export type VaultBalance = {
+  id: string;
+  total: bigint;
+};
+
 export type BalancesResponse = {
   result: UserBalance[];
   meta: {
@@ -15,7 +20,7 @@ export type BalancesResponse = {
     providerId: ProviderId;
     block: { number: bigint; timestamp: bigint };
     token: Address;
-    vaults: string[];
+    vaults: VaultBalance[];
   };
 };
 

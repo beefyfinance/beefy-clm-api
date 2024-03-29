@@ -1,4 +1,4 @@
-import type { IPlatform, IPlatformConstructor, PlatformBalance } from './types.js';
+import type { BalanceResult, IPlatform, IPlatformConstructor } from './types.js';
 import type { Vault } from '../utils/vaults.js';
 import { type Address, type GetBlockReturnType, getContract, type PublicClient } from 'viem';
 import { getWantFromVault } from './helpers.js';
@@ -29,14 +29,13 @@ class PendlePlatform implements IPlatform {
     this.routerAddress = routerAddress;
   }
 
-  public async getBalances(vault: Vault, users: Address[]): Promise<PlatformBalance[]> {
+  public async getBalances(vault: Vault, users: Address[]): Promise<BalanceResult> {
     const callParams = { blockNumber: this.block.number };
-    const { wantAddress: pendleMarketAddress, wantBalances } = await getWantFromVault(
-      vault,
-      users,
-      this.block.number,
-      this.publicClient
-    );
+    const {
+      wantAddress: pendleMarketAddress,
+      wantTotalBalance,
+      wantBalances,
+    } = await getWantFromVault(vault, users, this.block.number, this.publicClient);
 
     const pendleMarket = getContract({
       client: this.publicClient,
@@ -60,15 +59,23 @@ class PendlePlatform implements IPlatform {
 
     const [syUnderlyingAddress] = await Promise.all([syToken.read.yieldToken(callParams)]);
 
-    return users.map((user, i) => {
-      const userWantBalance = wantBalances[i]!;
+    const vaultBalances = [
+      { token: syUnderlyingAddress, balance: (totalSy * wantTotalBalance) / pendleTotalSupply },
+    ];
 
+    const userBalances = users.map((user, i) => {
+      const userWantBalance = wantBalances[i]!;
       return {
         user,
         token: syUnderlyingAddress,
         balance: (totalSy * userWantBalance) / pendleTotalSupply,
       };
     });
+
+    return {
+      users: userBalances,
+      vault: vaultBalances,
+    };
   }
 }
 

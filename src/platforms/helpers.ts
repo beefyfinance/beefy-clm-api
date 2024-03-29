@@ -17,7 +17,7 @@ export async function getWantFromVault(
     address: vault.earnContractAddress,
   });
 
-  const [beefyTotalSupply, beefyWantBalance, wantAddress, ...shareBalances] = await Promise.all([
+  const [beefyTotalSupply, wantTotalBalance, wantAddress, ...shareBalances] = await Promise.all([
     beefyVault.read.totalSupply(callParams),
     beefyVault.read.balance(callParams),
     beefyVault.read.want(callParams),
@@ -25,14 +25,14 @@ export async function getWantFromVault(
   ]);
 
   const wantBalances = shareBalances.map(
-    shareBalance => (shareBalance * beefyWantBalance) / beefyTotalSupply
+    shareBalance => (shareBalance * wantTotalBalance) / beefyTotalSupply
   );
   defaultLogger.debug({
     beefyTotalSupply,
-    beefyWantBalance,
+    wantTotalBalance,
     shareBalances,
     wantAddress,
     wantBalances,
   });
-  return { wantAddress, wantBalances };
+  return { wantAddress, wantTotalBalance, wantBalances };
 }

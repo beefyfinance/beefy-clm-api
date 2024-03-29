@@ -52,7 +52,16 @@ const balancesSuccessResponse = S.object()
         chainId: 'ethereum',
         block: { number: '19533016', timestamp: '1711633859' },
         token: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee',
-        vaults: ['aura-weeth-ezeth-rseth', 'aura-weeth-reth'],
+        vaults: [
+          {
+            id: 'aura-weeth-ezeth-rseth',
+            total: '46424998672416456',
+          },
+          {
+            id: 'aura-weeth-reth',
+            total: '133539891344960885975',
+          },
+        ],
       },
     },
   ])
@@ -69,7 +78,10 @@ const balancesSuccessResponse = S.object()
       .prop('providerId', providerSchema)
       .prop('block', S.object().prop('number', bigintSchema).prop('timestamp', bigintSchema))
       .prop('token', addressSchema)
-      .prop('vaults', S.array().items(S.string()))
+      .prop(
+        'vaults',
+        S.array().items(S.object().prop('id', S.string()).prop('total', bigintSchema))
+      )
   );
 
 const allBalancesSchema: FastifySchema = {
