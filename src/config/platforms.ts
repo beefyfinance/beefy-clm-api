@@ -3,6 +3,7 @@ import { Balancer } from '../platforms/balancer.js';
 import { keys } from '../utils/object.js';
 import { Curve } from '../platforms/curve.js';
 import { Pendle } from '../platforms/pendle.js';
+import { Aave } from '../platforms/aave.js';
 
 export const platforms = {
   balancer: Balancer,
@@ -10,6 +11,7 @@ export const platforms = {
   curve: Curve,
   pendle: Pendle,
   equilibria: Pendle,
+  mendi: Aave,
 } as const satisfies Record<string, IPlatformConstructor>;
 
 export type PlatformId = keyof typeof platforms;

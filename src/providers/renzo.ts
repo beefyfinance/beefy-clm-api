@@ -5,15 +5,14 @@ import type { Vault } from '../utils/vaults.js';
 import { BaseProvider } from './base.js';
 import type { PlatformBalance } from '../platforms/types.js';
 
-// const eETH: Address = '0x35fA164735182de50811E8e2E824cFb9B6118ac2';
-
-const chainToWrapped: Partial<Record<ChainId, Address>> = {
-  ethereum: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee',
-  arbitrum: '0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe',
+const chainToToken: Partial<Record<ChainId, Address>> = {
+  ethereum: '0xbf5495Efe5DB9ce00f80364C8B423567e58d2110',
+  arbitrum: '0x2416092f143378750bb29b79eD961ab195CcEea5',
+  linea: '0x2416092f143378750bb29b79eD961ab195CcEea5',
 };
 
-class EtherFiProvider extends BaseProvider implements IProvider {
-  private readonly wrapped: Address;
+class RenzoProvider extends BaseProvider implements IProvider {
+  private readonly ezETH: Address;
 
   constructor(
     chainId: ChainId,
@@ -22,22 +21,22 @@ class EtherFiProvider extends BaseProvider implements IProvider {
     vaults: Vault[],
     users: Address[]
   ) {
-    super('etherfi', ['weETH'], chainId, publicClient, block, vaults, users);
+    super('renzo', ['ezETH'], chainId, publicClient, block, vaults, users);
 
-    const wrapped = chainToWrapped[chainId];
-    if (!wrapped) {
+    const token = chainToToken[chainId];
+    if (!token) {
       throw new Error(`${chainId} is not supported by ${this.id} provider`);
     }
-    this.wrapped = wrapped;
+    this.ezETH = token;
   }
 
   protected get token(): Address {
-    return this.wrapped;
+    return this.ezETH;
   }
 
   protected filterPlatformBalance(balance: PlatformBalance): boolean {
-    return balance.token === this.wrapped && balance.balance > 0;
+    return balance.token === this.ezETH && balance.balance > 0;
   }
 }
 
-export const EtherFi = EtherFiProvider satisfies IProviderConstructor<EtherFiProvider>;
+export const Renzo = RenzoProvider satisfies IProviderConstructor<RenzoProvider>;

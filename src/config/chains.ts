@@ -26,7 +26,7 @@ export const chains = toChainMap([
     viem: mainnet,
     rpc: getRequiredStringEnv('ETHEREUM_RPC'),
     providers: {
-      // renzo: ['ezETH'],
+      renzo: ['ezETH'],
       etherfi: ['eETH', 'weETH'],
       // swell: ['swETH', 'rswETH'],
       // vector: ['vETH'],
@@ -38,7 +38,7 @@ export const chains = toChainMap([
     viem: arbitrum,
     rpc: getRequiredStringEnv('ARBITRUM_RPC'),
     providers: {
-      // renzo: ['ezETH'],
+      renzo: ['ezETH'],
       etherfi: ['eETH', 'weETH'],
       // kelp: ['rsETH'],
     },
@@ -49,7 +49,7 @@ export const chains = toChainMap([
     viem: linea,
     rpc: getRequiredStringEnv('LINEA_RPC'),
     providers: {
-      // renzo: ['ezETH'],
+      renzo: ['ezETH'],
     },
   },
 ] as const satisfies ReadonlyArray<Chain>);
