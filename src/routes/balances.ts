@@ -132,6 +132,11 @@ async function handleBalances(
     vaults = vaults.filter(vaultsFilter);
   }
 
+  if (vaults.length) {
+    reply.status(404);
+    return { error: 'Vault not found' };
+  }
+
   const balances = await processProvider(providerId, chain.id, publicClient, block, vaults, users);
 
   reply.header('cache-control', 'public, max-age=86400, s-maxage=86400');
