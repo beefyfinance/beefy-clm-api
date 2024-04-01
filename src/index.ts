@@ -24,6 +24,12 @@ server.register(async (instance, _opts, done) => {
       continueExceeding: true,
       skipOnError: false,
       enableDraftSpec: true,
+      errorResponseBuilder: (_request, context) => ({
+        statusCode: 429,
+        name: 'RateLimitExceededError',
+        error: 'Too Many Requests',
+        message: `Rate limit exceeded, retry in ${context.after}`,
+      }),
     })
     .register(FastifyEtag)
     .register(FastifyCors, {
