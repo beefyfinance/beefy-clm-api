@@ -1,5 +1,5 @@
 import type { Chain as ViemChain, MulticallBatchOptions } from 'viem';
-import { arbitrum, linea, mainnet, type Prettify } from 'viem/chains';
+import { arbitrum, base, linea, mainnet, type Prettify } from 'viem/chains';
 import { keyBy } from 'lodash-es';
 import { getRequiredStringEnv } from '../utils/env.js';
 import { keys } from '../utils/object.js';
@@ -48,6 +48,15 @@ export const chains = toChainMap([
     name: 'Linea',
     viem: linea,
     rpc: getRequiredStringEnv('LINEA_RPC'),
+    providers: {
+      renzo: ['ezETH'],
+    },
+  },
+  {
+    id: 'base',
+    name: 'Base',
+    viem: base,
+    rpc: getRequiredStringEnv('BASE_RPC'),
     providers: {
       renzo: ['ezETH'],
     },

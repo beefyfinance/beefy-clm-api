@@ -24,8 +24,8 @@ export async function getWantFromVault(
     ...users.map(user => beefyVault.read.balanceOf([user], callParams)),
   ]);
 
-  const wantBalances = shareBalances.map(
-    shareBalance => (shareBalance * wantTotalBalance) / beefyTotalSupply
+  const wantBalances = shareBalances.map(shareBalance =>
+    beefyTotalSupply === 0n ? 0n : (shareBalance * wantTotalBalance) / beefyTotalSupply
   );
   defaultLogger.debug({
     beefyTotalSupply,

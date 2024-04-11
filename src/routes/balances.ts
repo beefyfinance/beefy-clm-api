@@ -9,6 +9,7 @@ import { chainSchema } from '../schema/chain.js';
 import { type ProviderId } from '../config/providers.js';
 import { getVaults, type Vault } from '../utils/vaults.js';
 import { processProvider } from '../providers/index.js';
+import { vaultInitBlockByChain } from '../config/vaults.js';
 
 export type BalancesQueryString = {
   users?: string[];
@@ -117,7 +118,7 @@ async function handleBalances(
   reply: FastifyReply,
   chainId: ChainId,
   providerId: ProviderId,
-  blockNo: string,
+  blockNo: bigint,
   users: string[],
   vaultsFilter?: ((v: Vault) => boolean) | undefined
 ) {
@@ -133,11 +134,13 @@ async function handleBalances(
     return { error: 'Provider not found' };
   }
 
-  const publicClient = getRpcClient(chain.id);
-  const block = await publicClient.getBlock({
-    blockNumber: BigInt(blockNo),
-    includeTransactions: false,
-  });
+  const vaultInitBlocks = vaultInitBlockByChain[chain.id];
+  const chainBlocks = Object.values(vaultInitBlocks);
+  const minBlock = chainBlocks.reduce((a, b) => (a < b ? a : b), chainBlocks[0]);
+  if (blockNo < minBlock) {
+    reply.status(404);
+    return { error: `No vaults initialized by block ${blockNo} on ${chainId}` };
+  }
 
   let vaults = await getVaults(chain.id);
   if (vaultsFilter) {
@@ -146,8 +149,42 @@ async function handleBalances(
 
   if (vaults.length === 0) {
     reply.status(404);
-    return { error: 'Vault not found' };
+    return { error: vaultsFilter ? 'Requested vault not found' : `No vaults found for ${chainId}` };
   }
+
+  // Make sure we have deploy blocks for all vaults
+  for (const vault of vaults) {
+    const deployBlock = vaultInitBlocks[vault.id];
+    if (!deployBlock) {
+      reply.status(500);
+      return {
+        error: `Missing init block for vault ${vault.id} on ${chainId}, maybe support has not been added for this vault yet`,
+      };
+    }
+  }
+
+  if (vaultsFilter) {
+    // Request was for specific vault, so we need to check if it was deployed by the requested block
+    for (const vault of vaults) {
+      const deployBlock = vaultInitBlocks[vault.id]!;
+      if (blockNo < deployBlock) {
+        reply.status(404);
+        return { error: `Vault ${vault.id} not initialized by block ${blockNo} on ${chainId}` };
+      }
+    }
+  } else {
+    // Request was for all vaults, so filter out vaults that were not deployed by the requested block
+    vaults = vaults.filter(vault => {
+      const deployBlock = vaultInitBlocks[vault.id]!;
+      return blockNo >= deployBlock;
+    });
+  }
+
+  const publicClient = getRpcClient(chain.id);
+  const block = await publicClient.getBlock({
+    blockNumber: blockNo,
+    includeTransactions: false,
+  });
 
   const balances = await processProvider(providerId, chain.id, publicClient, block, vaults, users);
 
@@ -169,7 +206,7 @@ export default async function (
         reply,
         request.params.chain,
         request.params.provider,
-        request.params.block,
+        BigInt(request.params.block),
         request.query.users || []
       );
     }
@@ -183,7 +220,7 @@ export default async function (
         reply,
         request.params.chain,
         request.params.provider,
-        request.params.block,
+        BigInt(request.params.block),
         request.query.users || [],
         v => v.id === request.params.vault
       );

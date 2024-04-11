@@ -7,6 +7,7 @@ import FastifyCors from '@fastify/cors';
 import { defaultLogger } from './utils/log.js';
 import routes from './routes/index.js';
 import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env.js';
+import { FriendlyError } from './utils/error.js';
 
 const server = Fastify({
   logger: defaultLogger,
@@ -48,11 +49,19 @@ server.register(async (instance, _opts, done) => {
     })
     .setErrorHandler((error, _request, reply) => {
       reply.header('cache-control', 'no-cache, no-store, must-revalidate');
+      if ('metaMessages' in error) {
+        error.metaMessages = undefined;
+      }
       if (API_ENV === 'development') {
         reply.send(error);
       } else {
         defaultLogger.error(error);
-        reply.status(error.statusCode || 500).send({ error: error.name });
+        reply.status(error.statusCode || 500);
+        if (error instanceof FriendlyError) {
+          reply.send({ error: `${error.name}: ${error.message}` });
+        } else {
+          reply.send({ error: error.name });
+        }
       }
     })
     .register(routes, { prefix: '/api/v1' });

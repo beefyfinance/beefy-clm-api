@@ -2,6 +2,7 @@ import type { PlatformId } from '../config/platforms.js';
 import type { ChainId } from '../config/chains.js';
 import type { Address } from 'viem';
 import { defaultLogger } from './log.js';
+import { DatabarnEmptyResponseError, DatabarnInvalidResponseError } from './error.js';
 
 export type UserProductBalance = {
   beefy_vault_id: string;
@@ -28,11 +29,17 @@ export async function fetchBalances(
   defaultLogger.info(url);
   const response = await fetch(url);
   const data = await response.json();
-  if (!data || !Array.isArray(data) || data.length === 0 || !data[0].beefy_vault_id) {
+  if (!data || !Array.isArray(data)) {
     defaultLogger.trace(data);
-    throw new Error(
-      `Invalid response when fetching balances for chain ${chainId} and platform ${platformId} at block ${blockNo}`
-    );
+    throw new DatabarnInvalidResponseError(chainId, platformId, blockNo);
+  }
+  if (data.length === 0) {
+    defaultLogger.trace(data);
+    throw new DatabarnEmptyResponseError(chainId, platformId, blockNo);
+  }
+  if (!data[0].beefy_vault_id) {
+    defaultLogger.trace(data);
+    throw new DatabarnInvalidResponseError(chainId, platformId, blockNo);
   }
 
   return data as UserProductBalance[];
