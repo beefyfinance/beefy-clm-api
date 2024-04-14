@@ -1,0 +1,29 @@
+query TokenBreakdownBalances(
+  $block_number: Int!
+  $token_symbol: String!
+  $first: Int = 1000
+  $skip: Int = 0
+) {
+  _meta {
+    block {
+      number
+      timestamp
+    }
+    deployment
+  }
+  tokens(block: { number: $block_number }, where: { symbol: $token_symbol }) {
+    token_symbol: symbol
+    token_address: id
+    investorPositionBalanceBreakdowns(first: $first, skip: $skip) {
+      effective_balance: rawBalance
+      investorPosition {
+        investor {
+          investor_address: id
+        }
+        vault {
+          vault_address: id
+        }
+      }
+    }
+  }
+}

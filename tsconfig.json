@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ES2022"
-    ],
+    "lib": ["ES2022"],
     "module": "NodeNext",
     "target": "ES2021",
     "moduleResolution": "NodeNext",
@@ -23,16 +21,10 @@
     "verbatimModuleSyntax": true,
     "noErrorTruncation": true,
     "outDir": "build",
-    "typeRoots": [
-      "./node_modules/@types"
-    ]
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": [
-    "./src/**/*"
-  ],
-  "exclude": [
-    "./node_modules"
-  ],
+  "include": ["./src/**/*", "./.graphclient/**/*", "./.graphclient"],
+  "exclude": ["./node_modules"],
   "ts-node": {
     "esm": true,
     "compilerOptions": {

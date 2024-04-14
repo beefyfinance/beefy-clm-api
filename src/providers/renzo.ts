@@ -19,9 +19,10 @@ class RenzoProvider extends BaseProvider implements IProvider {
     publicClient: PublicClient,
     block: GetBlockReturnType,
     vaults: Vault[],
-    users: Address[]
+    users: Address[],
+    experimental: boolean
   ) {
-    super('renzo', ['ezETH'], chainId, publicClient, block, vaults, users);
+    super('renzo', ['ezETH'], chainId, publicClient, block, vaults, users, experimental);
 
     const token = chainToToken[chainId];
     if (!token) {
