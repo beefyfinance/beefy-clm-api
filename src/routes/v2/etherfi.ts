@@ -85,10 +85,17 @@ const getBalances = async (chain: ChainId, blockNumber: bigint) => {
     { chain }
   );
 
+  if (!res._meta) {
+    throw new Error('No meta found');
+  }
+  if (BigInt(res._meta.block.number) < blockNumber) {
+    throw new Error('Block not indexed yet. latest indexed block: ' + res._meta.block.number);
+  }
+
   if (!res.tokens.length) {
-    return { error: 'No tokens found' };
+    throw new Error('No tokens found');
   } else if (res.tokens.length > 1) {
-    return { error: 'Multiple tokens found' };
+    throw new Error('Multiple tokens found');
   }
 
   const token = res.tokens[0];
@@ -102,22 +109,25 @@ const getBalances = async (chain: ChainId, blockNumber: bigint) => {
     }))
     .filter(b => b.effective_balance > 0);
   if (!balances.length) {
-    return { error: 'No balances found' };
+    throw new Error('No balances found');
   }
 
   const balancesAgg = balances.reduce(
     (acc, b) => {
       if (!acc[b.address]) {
-        acc[b.address] = { balance: 0n, detail: [] };
+        acc[b.address] = { effective_balance: 0n, detail: [] };
       }
-      acc[b.address].balance += b.effective_balance;
+      acc[b.address].effective_balance += b.effective_balance;
       acc[b.address].detail.push({
         vault: b.vault_address,
         balance: b.effective_balance,
       });
       return acc;
     },
-    {} as Record<string, { balance: bigint; detail: { vault: string; balance: bigint }[] }>
+    {} as Record<
+      string,
+      { effective_balance: bigint; detail: { vault: string; balance: bigint }[] }
+    >
   );
   const result = Object.entries(balancesAgg).map(([address, agg]) => ({ address, ...agg }));
   const minBlock = balances.reduce(
