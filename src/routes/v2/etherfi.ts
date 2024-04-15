@@ -4,8 +4,8 @@ import { ChainId, getChainsByProvider } from '../../config/chains';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { addressSchema } from '../../schema/address';
-import { getBuiltGraphSDK } from '../../../.graphclient';
 import { ProviderId } from '../../config/providers';
+import { getBuiltGraphSDK } from '../../../.graphclient';
 
 export default async function (
   instance: FastifyInstance,
@@ -102,7 +102,7 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
     .flatMap(token =>
       token.investorPositionBalanceBreakdowns.map(b => ({
         address: b.investorPosition.investor.investor_address,
-        vault_address: b.investorPosition.vault.vault_address,
+        vault_id: b.investorPosition.vault.vaultId,
         effective_balance: BigInt(b.effective_balance),
         updated_at_block: b.lastUpdateBlock,
         updated_at_timestamp: b.lastUpdateTimestamp,
@@ -120,7 +120,7 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
       }
       acc[b.address].effective_balance += b.effective_balance;
       acc[b.address].detail.push({
-        vault: b.vault_address,
+        vault: b.vault_id,
         balance: b.effective_balance,
       });
       return acc;

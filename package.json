@@ -34,7 +34,8 @@
     "package:check": "ncu",
     "package:fix": "ncu -u && npm install",
     "postinstall": "npm --silent run codegen",
-    "codegen": "npx graphclient build"
+    "codegen": "npx graphclient build",
+    "lint-staged": "lint-staged"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,json}": "prettier --write"

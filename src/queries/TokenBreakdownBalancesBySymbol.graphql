@@ -17,6 +17,7 @@ query TokenBreakdownBalancesBySymbol(
         }
         vault {
           vault_address: id
+          vaultId
         }
       }
     }

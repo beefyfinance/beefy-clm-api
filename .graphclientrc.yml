@@ -5,7 +5,7 @@ sources:
   - name: beefy-lrt
     handler:
       graphql:
-        endpoint: https://api.0xgraph.xyz/subgraphs/name/beefyfinance/lrt-{context.chainName:arbitrum}
+        endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefyfinance/lrt-{context.chainName:arbitrum}/gn
     transforms:
       - autoTypeMerging: true
 
