@@ -1,4 +1,4 @@
-import type { ChainId } from '../config/chains.js';
+import type { ChainId } from '../config/chains';
 
 type FactoryFn<P, R> = (...props: P[]) => R;
 

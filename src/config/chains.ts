@@ -1,9 +1,9 @@
 import type { Chain as ViemChain, MulticallBatchOptions } from 'viem';
 import { arbitrum, base, linea, mainnet, type Prettify } from 'viem/chains';
-import { keyBy } from 'lodash-es';
-import { getRequiredStringEnv } from '../utils/env.js';
-import { keys } from '../utils/object.js';
-import type { ProviderId } from './providers.js';
+import { keyBy } from 'lodash';
+import { getRequiredStringEnv } from '../utils/env';
+import { keys } from '../utils/object';
+import type { ProviderId } from './providers';
 
 export type Chain<T extends string = string> = {
   id: T;

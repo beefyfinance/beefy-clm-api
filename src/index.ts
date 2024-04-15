@@ -4,10 +4,10 @@ import FastifyRateLimit from '@fastify/rate-limit';
 import FastifyUnderPressure from '@fastify/under-pressure';
 import FastifyEtag from '@fastify/etag';
 import FastifyCors from '@fastify/cors';
-import { defaultLogger } from './utils/log.js';
-import routes from './routes/index.js';
-import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env.js';
-import { FriendlyError } from './utils/error.js';
+import { defaultLogger } from './utils/log';
+import routes from './routes/index';
+import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env';
+import { FriendlyError } from './utils/error';
 
 const server = Fastify({
   logger: defaultLogger,

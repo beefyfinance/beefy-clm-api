@@ -1,4 +1,4 @@
-import { getLogLevelEnv, getNumberEnv } from '../utils/env.js';
+import { getLogLevelEnv, getNumberEnv } from '../utils/env';
 
 export const API_ENV: string = process.env['API_ENV'] || 'production';
 export const API_PORT: number = getNumberEnv('PORT', 4000);

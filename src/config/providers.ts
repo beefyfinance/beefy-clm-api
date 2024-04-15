@@ -1,7 +1,7 @@
-import type { IProviderConstructor } from '../providers/types.js';
-import { EtherFi } from '../providers/etherfi.js';
-import { Renzo } from '../providers/renzo.js';
-import { keys } from '../utils/object.js';
+import type { IProviderConstructor } from '../providers/types';
+import { EtherFi } from '../providers/etherfi';
+import { Renzo } from '../providers/renzo';
+import { keys } from '../utils/object';
 
 export type ProviderId = 'etherfi' | 'renzo';
 

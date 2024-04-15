@@ -1,7 +1,7 @@
-import type { BalanceResult, IPlatform, IPlatformConstructor } from './types.js';
-import type { Vault } from '../utils/vaults.js';
+import type { BalanceResult, IPlatform, IPlatformConstructor } from './types';
+import type { Vault } from '../utils/vaults';
 import type { Address } from 'viem';
-import { defaultLogger } from '../utils/log.js';
+import { defaultLogger } from '../utils/log';
 
 class CurvePlatform implements IPlatform {
   readonly id = 'curve';

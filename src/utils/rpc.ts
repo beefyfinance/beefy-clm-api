@@ -1,6 +1,6 @@
 import { createPublicClient, http, type MulticallBatchOptions, type PublicClient } from 'viem';
-import { type ChainId, getChain } from '../config/chains.js';
-import { createCachedFactoryByChainId } from './factory.js';
+import { type ChainId, getChain } from '../config/chains';
+import { createCachedFactoryByChainId } from './factory';
 
 const defaultMulticallOptions: boolean | MulticallBatchOptions = {
   batchSize: 64,

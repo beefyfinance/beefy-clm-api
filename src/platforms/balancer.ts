@@ -1,11 +1,11 @@
-import type { BalanceResult, IPlatform, IPlatformConstructor } from './types.js';
-import type { ChainId } from '../config/chains.js';
+import type { BalanceResult, IPlatform, IPlatformConstructor } from './types';
+import type { ChainId } from '../config/chains';
 import { type Address, type GetBlockReturnType, getContract, type PublicClient } from 'viem';
-import type { Vault } from '../utils/vaults.js';
-import { BalancerPoolAbi } from '../abi/BalancerPoolAbi.js';
-import { BalancerVaultAbi } from '../abi/BalancerVaultAbi.js';
-import { defaultLogger } from '../utils/log.js';
-import { getWantFromVault } from './helpers.js';
+import type { Vault } from '../utils/vaults';
+import { BalancerPoolAbi } from '../abi/BalancerPoolAbi';
+import { BalancerVaultAbi } from '../abi/BalancerVaultAbi';
+import { defaultLogger } from '../utils/log';
+import { getWantFromVault } from './helpers';
 
 class BalancerPlatform implements IPlatform {
   readonly id = 'balancer';

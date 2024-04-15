@@ -1,7 +1,7 @@
-import { type ChainId } from '../config/chains.js';
-import { Cache } from './cache.js';
-import { defaultLogger } from './log.js';
-import { isSupportedPlatform, type PlatformId } from '../config/platforms.js';
+import { type ChainId } from '../config/chains';
+import { Cache } from './cache';
+import { defaultLogger } from './log';
+import { isSupportedPlatform, type PlatformId } from '../config/platforms';
 import { type Address } from 'viem';
 
 export type RawVault = {

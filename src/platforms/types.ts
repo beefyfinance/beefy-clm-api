@@ -1,6 +1,6 @@
 import type { Address, GetBlockReturnType, PublicClient } from 'viem';
-import type { ChainId } from '../config/chains.js';
-import type { Vault } from '../utils/vaults.js';
+import type { ChainId } from '../config/chains';
+import type { Vault } from '../utils/vaults';
 
 export type TokenBalance = {
   token: Address;

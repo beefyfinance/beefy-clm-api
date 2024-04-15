@@ -1,7 +1,7 @@
-import type { ChainId } from '../config/chains.js';
+import type { ChainId } from '../config/chains';
 import type { Address, GetBlockReturnType, PublicClient } from 'viem';
-import type { Vault } from '../utils/vaults.js';
-import type { ProviderId } from '../config/providers.js';
+import type { Vault } from '../utils/vaults';
+import type { ProviderId } from '../config/providers';
 
 export type UserBalance = {
   address: Address;

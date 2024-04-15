@@ -1,5 +1,5 @@
 import { pino, type Logger, type LoggerOptions } from 'pino';
-import { API_ENV, LOG_LEVEL } from '../config/env.js';
+import { API_ENV, LOG_LEVEL } from '../config/env';
 
 const loggers: Record<string, Logger> = {};
 

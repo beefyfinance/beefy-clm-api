@@ -1,7 +1,7 @@
-import { type ProviderId, providers } from '../config/providers.js';
-import type { ChainId } from '../config/chains.js';
+import { type ProviderId, providers } from '../config/providers';
+import type { ChainId } from '../config/chains';
 import { getAddress, type GetBlockReturnType, type PublicClient } from 'viem';
-import type { Vault } from '../utils/vaults.js';
+import type { Vault } from '../utils/vaults';
 
 export async function processProvider(
   providerId: ProviderId,

@@ -1,8 +1,8 @@
-import type { PlatformId } from '../config/platforms.js';
-import type { ChainId } from '../config/chains.js';
+import type { PlatformId } from '../config/platforms';
+import type { ChainId } from '../config/chains';
 import type { Address } from 'viem';
-import { defaultLogger } from './log.js';
-import { DatabarnEmptyResponseError, DatabarnInvalidResponseError } from './error.js';
+import { defaultLogger } from './log';
+import { DatabarnEmptyResponseError, DatabarnInvalidResponseError } from './error';
 
 export type UserProductBalance = {
   beefy_vault_id: string;
