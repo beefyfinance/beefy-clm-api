@@ -1,17 +1,10 @@
 query TokenBreakdownBalancesBySymbol(
   $block_number: Int!
-  $token_symbol: String!
+  $token_symbols: [String!]!
   $first: Int = 1000
   $skip: Int = 0
 ) {
-  _meta {
-    block {
-      number
-      timestamp
-    }
-    deployment
-  }
-  tokens(block: { number: $block_number }, where: { symbol: $token_symbol }) {
+  tokens(block: { number: $block_number }, where: { symbol_in: $token_symbols }) {
     token_symbol: symbol
     token_address: id
     investorPositionBalanceBreakdowns(first: $first, skip: $skip) {
