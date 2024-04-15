@@ -36,7 +36,6 @@ export interface IProviderConstructor<T extends IProvider = IProvider> {
     publicClient: PublicClient,
     block: GetBlockReturnType,
     vaults: Vault[],
-    users: Address[],
-    experimental: boolean
+    users: Address[]
   ): T;
 }

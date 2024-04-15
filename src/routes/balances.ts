@@ -10,19 +10,15 @@ import { type ProviderId } from '../config/providers';
 import { getVaults, type Vault } from '../utils/vaults';
 import { processProvider } from '../providers/index';
 import { vaultInitBlockByChain } from '../config/vaults';
-import { experimentalFlagSchema } from '../schema/experimental';
 
 export type BalancesQueryString = {
   users?: string[];
-  experimental?: boolean;
 };
 
-const balancesQueryString = S.object()
-  .prop(
-    'users',
-    S.array().items(addressSchema).description('User addresses to query, leave blank for all users')
-  )
-  .prop('experimental', experimentalFlagSchema);
+const balancesQueryString = S.object().prop(
+  'users',
+  S.array().items(addressSchema).description('User addresses to query, leave blank for all users')
+);
 
 type AllBalancesParams = {
   provider: ProviderId;
@@ -124,8 +120,7 @@ async function handleBalances(
   providerId: ProviderId,
   blockNo: bigint,
   users: string[],
-  vaultsFilter?: ((v: Vault) => boolean) | undefined,
-  experimental?: boolean
+  vaultsFilter?: ((v: Vault) => boolean) | undefined
 ) {
   const chain = getChainOrUndefined(chainId);
   if (!chain) {
@@ -191,15 +186,7 @@ async function handleBalances(
     includeTransactions: false,
   });
 
-  const balances = await processProvider(
-    providerId,
-    chain.id,
-    publicClient,
-    block,
-    vaults,
-    users,
-    experimental ?? false
-  );
+  const balances = await processProvider(providerId, chain.id, publicClient, block, vaults, users);
 
   reply.header('cache-control', 'public, max-age=86400, s-maxage=86400');
 
@@ -220,9 +207,7 @@ export default async function (
         request.params.chain,
         request.params.provider,
         BigInt(request.params.block),
-        request.query.users || [],
-        undefined,
-        request.query.experimental === true
+        request.query.users || []
       );
     }
   );
@@ -237,8 +222,7 @@ export default async function (
         request.params.provider,
         BigInt(request.params.block),
         request.query.users || [],
-        v => v.id === request.params.vault,
-        request.query.experimental === true
+        v => v.id === request.params.vault
       );
     }
   );

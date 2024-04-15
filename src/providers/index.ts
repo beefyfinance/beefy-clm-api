@@ -9,11 +9,10 @@ export async function processProvider(
   publicClient: PublicClient,
   block: GetBlockReturnType,
   vaults: Vault[],
-  users: string[],
-  experimental: boolean
+  users: string[]
 ) {
   const userAddresses = users.map(u => getAddress(u));
   const Provider = providers[providerId];
-  const provider = new Provider(chainId, publicClient, block, vaults, userAddresses, experimental);
+  const provider = new Provider(chainId, publicClient, block, vaults, userAddresses);
   return provider.getBalances();
 }

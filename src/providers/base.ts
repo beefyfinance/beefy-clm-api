@@ -19,8 +19,7 @@ export abstract class BaseProvider {
     protected readonly publicClient: PublicClient,
     protected readonly block: GetBlockReturnType,
     vaults: Vault[],
-    protected readonly users: Address[],
-    protected readonly experimental: boolean
+    protected readonly users: Address[]
   ) {
     this.vaults = vaults.filter(v => supportedAssets.some(a => v.assets.includes(a)));
     if (vaults.length === 0) {
