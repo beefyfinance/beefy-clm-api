@@ -64,7 +64,7 @@ server.register(async (instance, _opts, done) => {
         }
       }
     })
-    .register(routes, { prefix: '/api/v1' });
+    .register(routes, { prefix: '/api' });
 
   done();
 });

@@ -81,3 +81,7 @@ export function getChainOrUndefined<T extends ChainId = ChainId>(id: T): Chain<T
   }
   return undefined;
 }
+
+export function getChainIdsByProvider(provider: ProviderId): ChainId[] {
+  return allChainIds.filter(chainId => provider in chains[chainId].providers);
+}
