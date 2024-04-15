@@ -1,9 +1,9 @@
-import type { IProvider, IProviderConstructor } from './types.js';
-import type { ChainId } from '../config/chains.js';
+import type { IProvider, IProviderConstructor } from './types';
+import type { ChainId } from '../config/chains';
 import { type Address, type GetBlockReturnType, type PublicClient } from 'viem';
-import type { Vault } from '../utils/vaults.js';
-import { BaseProvider } from './base.js';
-import type { PlatformBalance } from '../platforms/types.js';
+import type { Vault } from '../utils/vaults';
+import { BaseProvider } from './base';
+import type { PlatformBalance } from '../platforms/types';
 
 const chainToToken: Partial<Record<ChainId, Address>> = {
   ethereum: '0xbf5495Efe5DB9ce00f80364C8B423567e58d2110',

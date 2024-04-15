@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "license": "gpl-3.0",
   "private": true,
-  "type": "module",
   "engines": {
     "node": "^20.10.0"
   },
@@ -21,7 +20,7 @@
     "fastify": "^4.26.2",
     "fluent-json-schema": "^4.2.1",
     "graphql": "^16.8.1",
-    "lodash-es": "^4.17.21",
+    "lodash": "^4.17.21",
     "pino": "^8.19.0",
     "viem": "^2.9.3"
   },
@@ -29,13 +28,13 @@
     "prepare": "husky",
     "build": "tsc",
     "start": "node build/src/index.js",
-    "dev:start": "node --loader=ts-node/esm --no-warnings=ExperimentalWarning --require=dotenv/config src/index.ts",
+    "dev:start": "ts-node --require=dotenv/config src/index.ts",
     "prettier:check": "prettier --check src/**/*.{ts,tsx,json}",
     "prettier:fix": "prettier --write src/**/*.{ts,tsx,json}",
     "package:check": "ncu",
-    "package:fix": "ncu -u && yarn",
-    "postinstall": "yarn --silent run codegen",
-    "codegen": "node --loader ts-node/esm ./node_modules/.bin/graphclient build"
+    "package:fix": "ncu -u && npm install",
+    "postinstall": "npm --silent run codegen",
+    "codegen": "npx graphclient build"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,json}": "prettier --write"

@@ -1,8 +1,8 @@
-import type { BalanceResult, IPlatform, IPlatformConstructor } from './types.js';
-import type { Vault } from '../utils/vaults.js';
+import type { BalanceResult, IPlatform, IPlatformConstructor } from './types';
+import type { Vault } from '../utils/vaults';
 import { type Address, type GetBlockReturnType, type PublicClient } from 'viem';
-import { getWantFromVault } from './helpers.js';
-import type { ChainId } from '../config/chains.js';
+import { getWantFromVault } from './helpers';
+import type { ChainId } from '../config/chains';
 
 class AavePlatform implements IPlatform {
   readonly id = 'aave';

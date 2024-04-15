@@ -1,7 +1,7 @@
-import type { Vault } from '../utils/vaults.js';
+import type { Vault } from '../utils/vaults';
 import { type Address, getContract, type PublicClient } from 'viem';
-import { BeefyVaultAbi } from '../abi/BeefyVaultAbi.js';
-import { defaultLogger } from '../utils/log.js';
+import { BeefyVaultAbi } from '../abi/BeefyVaultAbi';
+import { defaultLogger } from '../utils/log';
 
 export async function getWantFromVault(
   vault: Vault,

@@ -1,16 +1,16 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifySchema } from 'fastify';
 import { S } from 'fluent-json-schema';
-import { addressSchema } from '../schema/address.js';
-import { type ChainId, getChainOrUndefined } from '../config/chains.js';
-import { bigintSchema } from '../schema/bigint.js';
-import { getRpcClient } from '../utils/rpc.js';
-import { providerSchema } from '../schema/provider.js';
-import { chainSchema } from '../schema/chain.js';
-import { type ProviderId } from '../config/providers.js';
-import { getVaults, type Vault } from '../utils/vaults.js';
-import { processProvider } from '../providers/index.js';
-import { vaultInitBlockByChain } from '../config/vaults.js';
-import { experimentalFlagSchema } from '../schema/experimental.js';
+import { addressSchema } from '../schema/address';
+import { type ChainId, getChainOrUndefined } from '../config/chains';
+import { bigintSchema } from '../schema/bigint';
+import { getRpcClient } from '../utils/rpc';
+import { providerSchema } from '../schema/provider';
+import { chainSchema } from '../schema/chain';
+import { type ProviderId } from '../config/providers';
+import { getVaults, type Vault } from '../utils/vaults';
+import { processProvider } from '../providers/index';
+import { vaultInitBlockByChain } from '../config/vaults';
+import { experimentalFlagSchema } from '../schema/experimental';
 
 export type BalancesQueryString = {
   users?: string[];

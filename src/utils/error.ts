@@ -1,5 +1,5 @@
-import type { PlatformId } from '../config/platforms.js';
-import type { ChainId } from '../config/chains.js';
+import type { PlatformId } from '../config/platforms';
+import type { ChainId } from '../config/chains';
 
 export class FriendlyError extends Error {
   constructor(message: string) {

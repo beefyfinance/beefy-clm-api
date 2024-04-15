@@ -1,10 +1,10 @@
-import type { BalanceResult, IPlatform, IPlatformConstructor } from './types.js';
-import type { Vault } from '../utils/vaults.js';
+import type { BalanceResult, IPlatform, IPlatformConstructor } from './types';
+import type { Vault } from '../utils/vaults';
 import { type Address, type GetBlockReturnType, getContract, type PublicClient } from 'viem';
-import { getWantFromVault } from './helpers.js';
-import type { ChainId } from '../config/chains.js';
-import { PendleMarketAbi } from '../abi/PendleMarketAbi.js';
-import { PendleSyAbi } from '../abi/PendleSyAbi.js';
+import { getWantFromVault } from './helpers';
+import type { ChainId } from '../config/chains';
+import { PendleMarketAbi } from '../abi/PendleMarketAbi';
+import { PendleSyAbi } from '../abi/PendleSyAbi';
 
 const chainToRouterAddress: Partial<Record<ChainId, Address>> = {
   ethereum: '0x00000000005BBB0EF59571E58418F9a4357b68A0',

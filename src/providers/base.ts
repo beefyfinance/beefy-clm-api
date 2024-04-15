@@ -1,12 +1,12 @@
-import type { BalancesResponse, UserBalance, VaultBalance } from './types.js';
-import type { ChainId } from '../config/chains.js';
+import type { BalancesResponse, UserBalance, VaultBalance } from './types';
+import type { ChainId } from '../config/chains';
 import { type Address, getAddress, type GetBlockReturnType, type PublicClient } from 'viem';
-import type { Vault } from '../utils/vaults.js';
-import { uniq } from 'lodash-es';
-import { type PlatformId, platforms } from '../config/platforms.js';
-import { fetchBalances } from '../utils/balances.js';
-import type { ProviderId } from '../config/providers.js';
-import type { TokenBalance } from '../platforms/types.js';
+import type { Vault } from '../utils/vaults';
+import { uniq } from 'lodash';
+import { type PlatformId, platforms } from '../config/platforms';
+import { fetchBalances } from '../utils/balances';
+import type { ProviderId } from '../config/providers';
+import type { TokenBalance } from '../platforms/types';
 
 export abstract class BaseProvider {
   protected readonly vaults: Vault[];

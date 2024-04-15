@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import balances from './balances.js';
+import balances from './balances';
 import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
-import { API_ENV } from '../config/env.js';
+import { API_ENV } from '../config/env';
 
 export default async function (
   instance: FastifyInstance,

@@ -1,9 +1,9 @@
-import type { IPlatformConstructor } from '../platforms/types.js';
-import { Balancer } from '../platforms/balancer.js';
-import { keys } from '../utils/object.js';
-import { Curve } from '../platforms/curve.js';
-import { Pendle } from '../platforms/pendle.js';
-import { Aave } from '../platforms/aave.js';
+import type { IPlatformConstructor } from '../platforms/types';
+import { Balancer } from '../platforms/balancer';
+import { keys } from '../utils/object';
+import { Curve } from '../platforms/curve';
+import { Pendle } from '../platforms/pendle';
+import { Aave } from '../platforms/aave';
 
 export const platforms = {
   balancer: Balancer,
