@@ -102,7 +102,7 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
         block_number: Number(blockNumber),
         token_symbols: symbols,
       },
-      { chain }
+      { chainName: chain }
     )
     .catch(e => {
       // we have nothing to leak here
