@@ -5,18 +5,20 @@ query TokenBreakdownBalancesBySymbol(
   $skip: Int = 0
 ) {
   tokens(block: { number: $block_number }, where: { symbol_in: $token_symbols }) {
-    token_symbol: symbol
-    token_address: id
+    symbol: symbol
+    address: id
+    decimals: decimals
     investorPositionBalanceBreakdowns(first: $first, skip: $skip) {
-      effective_balance: rawBalance
+      rawBalance
       lastUpdateTimestamp
       lastUpdateBlock
+      rawTimeWeightedBalance
       investorPosition {
         investor {
-          investor_address: id
+          address: id
         }
         vault {
-          vault_address: id
+          address: id
           vaultId
         }
       }
