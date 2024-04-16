@@ -27,7 +27,7 @@
   "scripts": {
     "prepare": "husky",
     "build": "tsc",
-    "start": "node --require=dotenv/config build/src/index.js",
+    "start": "node build/src/index.js",
     "dev:start": "ts-node --require=dotenv/config src/index.ts",
     "prettier:check": "prettier --check src/**/*.{ts,tsx,json}",
     "prettier:fix": "prettier --write src/**/*.{ts,tsx,json}",
