@@ -6,6 +6,7 @@ import { bigintSchema } from '../../schema/bigint';
 import { addressSchema } from '../../schema/address';
 import { ProviderId } from '../../config/providers';
 import { getBuiltGraphSDK } from '../../../.graphclient';
+import { FriendlyError } from '../../utils/error';
 
 export default async function (
   instance: FastifyInstance,
@@ -90,13 +91,18 @@ export default async function (
 
 const sdk = getBuiltGraphSDK();
 const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigint) => {
-  const res = await sdk.TokenBreakdownBalancesBySymbol(
-    {
-      block_number: Number(blockNumber),
-      token_symbols: symbols,
-    },
-    { chain }
-  );
+  const res = await sdk
+    .TokenBreakdownBalancesBySymbol(
+      {
+        block_number: Number(blockNumber),
+        token_symbols: symbols,
+      },
+      { chain }
+    )
+    .catch(e => {
+      // we have nothing to leak here
+      throw new FriendlyError(e?.message ?? e?.toString() ?? 'Unknown TheGraph error');
+    });
 
   const balances = res.tokens
     .flatMap(token =>
@@ -110,7 +116,7 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
     )
     .filter(b => b.effective_balance > 0);
   if (!balances.length) {
-    throw new Error('No balances found');
+    throw new FriendlyError('No balances found');
   }
 
   const balancesAgg = balances.reduce(
