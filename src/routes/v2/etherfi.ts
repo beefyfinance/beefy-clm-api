@@ -133,7 +133,7 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
   const result = Object.entries(balancesAgg).map(([address, agg]) => ({ address, ...agg }));
   const minBlock = balances.reduce(
     (acc, b) =>
-      b.updated_at_block < acc
+      b.updated_at_block < acc.number
         ? { number: b.updated_at_block, timestamp: b.updated_at_timestamp }
         : acc,
     { number: balances[0].updated_at_block, timestamp: balances[0].updated_at_timestamp }
