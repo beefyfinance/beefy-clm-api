@@ -100,11 +100,8 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
       { chain }
     )
     .catch(e => {
-      if (e?.message?.includes('has only indexed up to block number')) {
-        throw new FriendlyError(e.message);
-      } else {
-        throw e;
-      }
+      // we have nothing to leak here
+      throw new FriendlyError(e?.message ?? e?.toString() ?? 'Unknown TheGraph error');
     });
 
   const balances = res.tokens
