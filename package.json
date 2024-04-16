@@ -14,10 +14,12 @@
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
     "@fastify/under-pressure": "^8.3.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
     "@types/lodash-es": "^4.17.12",
     "date-fns": "^3.6.0",
     "fastify": "^4.26.2",
     "fluent-json-schema": "^4.2.1",
+    "graphql": "^16.8.1",
     "lodash": "^4.17.21",
     "pino": "^8.19.0",
     "viem": "^2.9.3"
@@ -25,17 +27,21 @@
   "scripts": {
     "prepare": "husky",
     "build": "tsc",
-    "start": "node build/index.js",
+    "start": "node --require=dotenv/config build/src/index.js",
     "dev:start": "ts-node --require=dotenv/config src/index.ts",
     "prettier:check": "prettier --check src/**/*.{ts,tsx,json}",
     "prettier:fix": "prettier --write src/**/*.{ts,tsx,json}",
     "package:check": "ncu",
-    "package:fix": "ncu -u && npm install"
+    "package:fix": "ncu -u && npm install",
+    "postinstall": "npm --silent run codegen",
+    "codegen": "npx graphclient build",
+    "lint-staged": "lint-staged"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,json}": "prettier --write"
   },
   "devDependencies": {
+    "@graphprotocol/client-cli": "^3.0.0",
     "@types/node": "^20.11.30",
     "dotenv": "^16.4.5",
     "husky": "^9.0.11",

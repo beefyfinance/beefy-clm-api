@@ -1,15 +1,15 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifySchema } from 'fastify';
 import { S } from 'fluent-json-schema';
-import { addressSchema } from '../schema/address';
-import { type ChainId, getChainOrUndefined } from '../config/chains';
-import { bigintSchema } from '../schema/bigint';
-import { getRpcClient } from '../utils/rpc';
-import { providerSchema } from '../schema/provider';
-import { chainSchema } from '../schema/chain';
-import { type ProviderId } from '../config/providers';
-import { getVaults, type Vault } from '../utils/vaults';
-import { processProvider } from '../providers/index';
-import { vaultInitBlockByChain } from '../config/vaults';
+import { addressSchema } from '../../schema/address';
+import { type ChainId, getChainOrUndefined } from '../../config/chains';
+import { bigintSchema } from '../../schema/bigint';
+import { getRpcClient } from '../../utils/rpc';
+import { providerSchema } from '../../schema/provider';
+import { chainSchema } from '../../schema/chain';
+import { type ProviderId } from '../../config/providers';
+import { getVaults, type Vault } from '../../utils/vaults';
+import { processProvider } from '../../providers/index';
+import { vaultInitBlockByChain } from '../../config/vaults';
 
 export type BalancesQueryString = {
   users?: string[];
