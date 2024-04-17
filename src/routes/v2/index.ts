@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import balances from './balances';
-import blocksLatest from './blocks-latest';
-import blocksRecent from './blocks-recent';
+import blocks from './blocks';
 
 export default async function (
   instance: FastifyInstance,
@@ -9,7 +8,6 @@ export default async function (
   done: (err?: Error) => void
 ) {
   instance.register(balances, { prefix: '/balances' });
-  instance.register(blocksLatest, { prefix: '/blocks/latest' });
-  instance.register(blocksRecent, { prefix: '/blocks/recent' });
+  instance.register(blocks, { prefix: '/blocks' });
   done();
 }
