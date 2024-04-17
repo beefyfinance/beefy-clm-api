@@ -20,6 +20,10 @@ query TokenBreakdownBalancesBySymbol(
         vault {
           address: id
           vaultId
+          underlyingToken {
+            symbol: symbol
+            address: id
+          }
         }
       }
     }
