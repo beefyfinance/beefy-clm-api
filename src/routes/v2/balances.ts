@@ -5,8 +5,9 @@ import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { addressSchema } from '../../schema/address';
 import { ProviderId } from '../../config/providers';
-import { FriendlyError } from '../../utils/error';
-import { getBuiltGraphSDK } from '../../../.graphclient';
+import { FriendlyError, GraphQueryError } from '../../utils/error';
+import { providerSchema } from '../../schema/provider';
+import { sdk } from './sdk';
 
 export default async function (
   instance: FastifyInstance,
@@ -22,6 +23,7 @@ export default async function (
     };
 
     const urlParamsSchema = S.object()
+      .prop('providerId', providerSchema.required().description('LRT provider'))
       .prop('chain', chainSchema.required().description('Chain to query balances for'))
       .prop('block', bigintSchema.required().description('Block number to query balances at'));
 
@@ -57,6 +59,7 @@ export default async function (
       );
 
     const schema: FastifySchema = {
+      tags: ['v2'],
       params: urlParamsSchema,
       response: {
         200: responseSchema,
@@ -94,7 +97,6 @@ export default async function (
   done();
 }
 
-const sdk = getBuiltGraphSDK();
 const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigint) => {
   const res = await sdk
     .TokenBreakdownBalancesBySymbol(
@@ -104,9 +106,9 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
       },
       { chainName: chain }
     )
-    .catch(e => {
+    .catch((e: unknown) => {
       // we have nothing to leak here
-      throw new FriendlyError(e?.message ?? e?.toString() ?? 'Unknown TheGraph error');
+      throw new GraphQueryError(e);
     });
 
   const balances = res.tokens
