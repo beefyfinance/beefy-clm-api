@@ -1,0 +1,19 @@
+query LatestVaultBreakdownsBySymbol(
+  $token_symbols: [String!]!
+  $first: Int = 1000
+  $skip: Int = 0
+) {
+  tokens(where: { symbol_in: $token_symbols }) {
+    address: id
+    symbol
+    decimals
+    vaultBalanceBreakdowns(first: $first, skip: $skip) {
+      lastUpdateTimestamp
+      lastUpdateBlock
+      vault {
+        id: vaultId
+        address: id
+      }
+    }
+  }
+}

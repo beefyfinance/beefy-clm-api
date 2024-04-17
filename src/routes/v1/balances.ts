@@ -86,6 +86,8 @@ const balancesSuccessResponse = S.object()
   );
 
 const allBalancesSchema: FastifySchema = {
+  tags: ['v1'],
+  deprecated: true,
   querystring: balancesQueryString,
   params: allBalancesParams,
   response: {
@@ -105,6 +107,8 @@ const singleBalancesParams = allBalancesParams.prop(
 );
 
 const singleBalancesSchema: FastifySchema = {
+  tags: ['v1'],
+  deprecated: true,
   querystring: balancesQueryString,
   params: singleBalancesParams,
   response: {

@@ -1,0 +1,9 @@
+query RecentVaultBreakdownsByVault($block_number: BigInt!, $vault_addresses: [Bytes!]!) {
+  beefyVaults(where: {id_in: $vault_addresses}) {
+    address: id
+    underlyingTokenBalanceBreakdownUpdateEvents(first: 10, orderBy: blockTimestamp, orderDirection: desc, where: {blockNumber_lte: $block_number}) {
+      blockTimestamp
+      blockNumber
+    }
+  }
+}
