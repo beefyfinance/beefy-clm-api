@@ -54,7 +54,13 @@ export default async function (
           .prop('block', S.object().prop('number', bigintSchema).prop('timestamp', bigintSchema))
           .prop(
             'vaults',
-            S.array().items(S.object().prop('id', S.string()).prop('total', bigintSchema))
+            S.array().items(
+              S.object()
+                .prop('id', S.string())
+                .prop('total', bigintSchema)
+                .prop('address', addressSchema)
+                .prop('underlying_token_address', addressSchema)
+            )
           )
       );
 
@@ -115,7 +121,7 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
     .flatMap(token =>
       token.investorPositionBalanceBreakdowns.map(b => ({
         address: String(b.investorPosition.investor.address),
-        vault_id: b.investorPosition.vault.vaultId,
+        vault: b.investorPosition.vault,
         effective_balance: BigInt(b.rawBalance),
         time_weighted_effective_balance_1s: BigInt(b.rawTimeWeightedBalance),
         last_update_block: {
@@ -151,7 +157,7 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
         acc[b.address].last_update_block = b.last_update_block;
       }
       acc[b.address].detail.push({
-        vault: b.vault_id,
+        vault: b.vault.vaultId,
         balance: b.effective_balance,
       });
       return acc;
@@ -178,12 +184,38 @@ const getBalances = async (chain: ChainId, symbols: string[], blockNumber: bigin
     (acc, b) => (b.last_update_block.number < acc.number ? b.last_update_block : acc),
     balances[0].last_update_block
   );
+  const vaultsByAddress = balances.reduce(
+    (acc, b) => {
+      if (!acc[b.vault.address]) {
+        acc[b.vault.address] = {
+          id: b.vault.vaultId,
+          total: result.reduce(
+            (sum, r) => (r.detail.find(d => d.vault === b.vault.vaultId)?.balance ?? 0n) + sum,
+            0n
+          ),
+          address: b.vault.address,
+          underlying_token_address: b.vault.underlyingToken.address,
+        };
+      }
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        id: string;
+        total: bigint;
+        address: string;
+        underlying_token_address: string;
+      }
+    >
+  );
 
   return {
     result,
     meta: {
       chainId: chain,
       block: minLastUpdate,
+      vaults: Object.values(vaultsByAddress),
     },
   };
 };
