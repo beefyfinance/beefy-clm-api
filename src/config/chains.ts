@@ -1,5 +1,5 @@
-import type { Chain as ViemChain } from 'viem';
-import { arbitrum, base, optimism } from 'viem/chains';
+import type { Chain as ViemChain, MulticallBatchOptions } from 'viem';
+import { arbitrum, base, optimism, type Prettify } from 'viem/chains';
 import { keyBy } from 'lodash';
 import { keys } from '../utils/object';
 
@@ -7,6 +7,8 @@ export type Chain<T extends string = string> = {
   id: T;
   name: string;
   viem: ViemChain;
+  batch?: boolean | MulticallBatchOptions | undefined;
+  multicall?: boolean | Prettify<MulticallBatchOptions> | undefined;
 };
 
 function toChainMap<T extends ReadonlyArray<Chain>>(arr: T) {
