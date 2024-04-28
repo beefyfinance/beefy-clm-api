@@ -1,5 +1,5 @@
 {
-  "name": "beefy-lrt-api",
+  "name": "beefy-clm-api",
   "version": "1.0.0",
   "license": "gpl-3.0",
   "private": true,
@@ -30,8 +30,8 @@
     "build": "tsc",
     "start": "node build/src/index.js",
     "dev:start": "ts-node --require=dotenv/config src/index.ts",
-    "prettier:check": "prettier --check src/**/*.{ts,tsx,json}",
-    "prettier:fix": "prettier --write src/**/*.{ts,tsx,json}",
+    "prettier:check": "prettier --check src/**/*.{ts,graphql}",
+    "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
     "package:check": "ncu",
     "package:fix": "ncu -u && npm install",
     "postinstall": "npm --silent run codegen",
@@ -39,7 +39,7 @@
     "lint-staged": "lint-staged"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx,json}": "prettier --write"
+    "src/**/*.{ts,tsx,graphql,json}": "prettier --write"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

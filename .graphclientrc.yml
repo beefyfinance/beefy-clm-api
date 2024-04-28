@@ -2,11 +2,11 @@
 # https://github.com/graphprotocol/graph-client/blob/main/examples/composition/.graphclientrc.yml
 
 sources:
-  - name: beefy-lrt
+  - name: beefy-clm
     handler:
       graphql:
-        #endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefyfinance/lrt-{context.chainName:arbitrum}/gn
-        endpoint: https://api.0xgraph.xyz/subgraphs/name/beefyfinance/lrt-{context.chainName:arbitrum}
+        endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefyfinance/clm-{context.chainName:arbitrum}/gn
+        #endpoint: https://api.0xgraph.xyz/subgraphs/name/beefyfinance/clm-{context.chainName:arbitrum}
     transforms:
       - autoTypeMerging: true
       - autoPagination: {}

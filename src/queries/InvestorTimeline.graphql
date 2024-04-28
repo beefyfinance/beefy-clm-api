@@ -1,0 +1,47 @@
+fragment Token on Token {
+  decimals
+}
+
+query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
+  investorPositions(
+    skip: 0
+    first: 1000
+    where: { investor: $investor_address, sharesBalance_gt: 0 }
+  ) {
+    vault {
+      address: id
+
+      sharesToken {
+        ...Token
+      }
+      underlyingToken0 {
+        ...Token
+      }
+      underlyingToken1 {
+        ...Token
+      }
+
+      totalSupply
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+    sharesBalance
+    interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
+      timestamp
+      blockNumber
+      createdWith {
+        id
+      }
+      sharesBalance
+      underlyingBalance0
+      underlyingBalance1
+      sharesBalanceDelta
+      underlyingBalance0Delta
+      underlyingBalance1Delta
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+  }
+}
