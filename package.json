@@ -6,6 +6,19 @@
   "engines": {
     "node": "^20.10.0"
   },
+  "scripts": {
+    "prepare": "husky",
+    "build": "tsc",
+    "start": "node build/src/index.js",
+    "dev:start": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
+    "prettier:check": "prettier --check src/**/*.{ts,graphql}",
+    "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
+    "package:check": "ncu",
+    "package:fix": "ncu -u && npm install",
+    "postinstall": "npm --silent run codegen",
+    "codegen": "npx graphclient build",
+    "lint-staged": "lint-staged"
+  },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
     "@fastify/etag": "^5.1.0",
@@ -25,19 +38,6 @@
     "lodash": "^4.17.21",
     "pino": "^8.19.0",
     "viem": "^2.9.3"
-  },
-  "scripts": {
-    "prepare": "husky",
-    "build": "tsc",
-    "start": "node build/src/index.js",
-    "dev:start": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
-    "prettier:check": "prettier --check src/**/*.{ts,graphql}",
-    "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
-    "package:check": "ncu",
-    "package:fix": "ncu -u && npm install",
-    "postinstall": "npm --silent run codegen",
-    "codegen": "npx graphclient build",
-    "lint-staged": "lint-staged"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,graphql,json}": "prettier --write"

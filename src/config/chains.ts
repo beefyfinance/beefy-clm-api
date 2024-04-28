@@ -9,6 +9,7 @@ export type Chain<T extends string = string> = {
   viem: ViemChain;
   batch?: boolean | MulticallBatchOptions | undefined;
   multicall?: boolean | Prettify<MulticallBatchOptions> | undefined;
+  rpc: string;
 };
 
 function toChainMap<T extends ReadonlyArray<Chain>>(arr: T) {
@@ -20,16 +21,19 @@ export const chains = toChainMap([
     id: 'arbitrum',
     name: 'Arbitrum',
     viem: arbitrum,
+    rpc: 'http://localhost:8547',
   },
   {
     id: 'base',
     name: 'Base',
     viem: base,
+    rpc: 'http://localhost:8547',
   },
   {
     id: 'optimism',
     name: 'Optimism',
     viem: optimism,
+    rpc: 'http://localhost:8547',
   },
 ] as const satisfies ReadonlyArray<Chain>);
 
