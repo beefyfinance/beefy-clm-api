@@ -127,6 +127,4 @@ const getTimeline = async (investor_address: string) => {
       })
     )
   );
-
-  return res;
 };

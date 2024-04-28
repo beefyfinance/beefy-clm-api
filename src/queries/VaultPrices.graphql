@@ -1,0 +1,66 @@
+fragment Token on Token {
+  name
+  symbol
+  decimals
+}
+
+query VaultPrices(
+  $vault_address: ID!
+  $collected_fee_first: Int = 10
+  $first: Int = 1000
+  $skip: Int = 0
+) {
+  beefyCLVault(id: $vault_address) {
+    sharesToken {
+      ...Token
+    }
+    underlyingToken0 {
+      ...Token
+    }
+    underlyingToken1 {
+      ...Token
+    }
+    totalSupply
+    token0ToNativePrice
+    token1ToNativePrice
+    nativeToUSDPrice
+    priceOfToken0InToken1
+    priceRangeMin1
+    priceRangeMax1
+    underlyingMainAmount0
+    underlyingMainAmount1
+    underlyingAltAmount0
+    underlyingAltAmount1
+    snapshots(
+      first: $first
+      skip: $skip
+      orderBy: roundedTimestamp
+      orderDirection: asc
+      where: { period: 86400 }
+    ) {
+      roundedTimestamp
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+      priceOfToken0InToken1
+      priceRangeMin1
+      priceRangeMax1
+      underlyingMainAmount0
+      underlyingMainAmount1
+      underlyingAltAmount0
+      underlyingAltAmount1
+    }
+    collectedFees(skip: 0, first: $collected_fee_first, orderBy: timestamp, orderDirection: desc) {
+      timestamp
+      underlyingMainAmount0
+      underlyingMainAmount1
+      underlyingAltAmount0
+      underlyingAltAmount1
+      collectedAmount0
+      collectedAmount1
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+  }
+}
