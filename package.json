@@ -18,6 +18,7 @@
     "@graphql-typed-document-node/core": "^3.2.0",
     "@types/lodash-es": "^4.17.12",
     "date-fns": "^3.6.0",
+    "decimal.js": "^10.4.3",
     "fastify": "^4.26.2",
     "fluent-json-schema": "^4.2.1",
     "graphql": "^16.8.1",
@@ -29,7 +30,7 @@
     "prepare": "husky",
     "build": "tsc",
     "start": "node build/src/index.js",
-    "dev:start": "ts-node --require=dotenv/config src/index.ts",
+    "dev:start": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
     "prettier:check": "prettier --check src/**/*.{ts,graphql}",
     "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
     "package:check": "ncu",
@@ -50,6 +51,7 @@
     "pino-pretty": "^11.0.0",
     "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.3"
   }
 }

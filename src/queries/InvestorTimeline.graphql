@@ -1,4 +1,6 @@
 fragment Token on Token {
+  name
+  symbol
   decimals
 }
 
@@ -31,7 +33,7 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
       timestamp
       blockNumber
       createdWith {
-        id
+        hash: id
       }
       sharesBalance
       underlyingBalance0

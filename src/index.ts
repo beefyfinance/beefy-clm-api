@@ -8,6 +8,15 @@ import { defaultLogger } from './utils/log';
 import routes from './routes/index';
 import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env';
 import { FriendlyError } from './utils/error';
+import Decimal from 'decimal.js';
+
+Decimal.set({
+  // make sure we have enough precision
+  precision: 50,
+  // configure the Decimals lib to format without exponents
+  toExpNeg: -250,
+  toExpPos: 250,
+});
 
 const server = Fastify({
   logger: defaultLogger,

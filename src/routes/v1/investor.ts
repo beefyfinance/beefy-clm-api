@@ -4,6 +4,7 @@ import { allChainIds } from '../../config/chains';
 import { addressSchema } from '../../schema/address';
 import { GraphQueryError } from '../../utils/error';
 import { sdk } from '../../utils/sdk';
+import { interpretAsDecimal } from '../../utils/decimal';
 
 export default async function (
   instance: FastifyInstance,
@@ -63,25 +64,69 @@ const getTimeline = async (investor_address: string) => {
     )
   );
 
-  /*
-{
-        "datetime": "2023-11-01T12:38:13.000Z",
-        "product_key": "beefy:boost:optimism:0xfa6b418801dfc7a33c30686d2673302141c2cbed",
-        "display_name": "moo_velodrome-v2-weth-moobifi-beefy",
-        "chain": "optimism",
-        "is_eol": false,
-        "is_dashboard_eol": false,
-        "transaction_hash": "0x4097f1b40237efdb78a6e8309b80b8ac0e8081b5cc768dc0629e98c4345856cb",
-        "share_to_underlying_price": 1.0081501761190834,
-        "underlying_to_usd_price": 1561.1360324756242,
-        "share_balance": 4.716812425243712,
-        "underlying_balance": 4.755255277230129,
-        "usd_balance": 7423.600356903818,
-        "share_diff": 4.716812425243712,
-        "underlying_diff": 4.755255277230129,
-        "usd_diff": 7423.600356903818
-    }
-*/
+  return res.flatMap(chainRes =>
+    chainRes.investorPositions.flatMap(position =>
+      position.interactions.map(interaction => {
+        const shareToken = position.vault.sharesToken;
+        const token0 = position.vault.underlyingToken0;
+        const token1 = position.vault.underlyingToken1;
+        const interactionToken0ToNative = interpretAsDecimal(
+          interaction.token0ToNativePrice,
+          token0.decimals
+        );
+        const interactionToken1ToNative = interpretAsDecimal(
+          interaction.token1ToNativePrice,
+          token1.decimals
+        );
+        const interactionNativeToUsd = interpretAsDecimal(interaction.nativeToUSDPrice, 18);
+        const share_balance = interpretAsDecimal(interaction.sharesBalance, shareToken.decimals);
+        const underlyingBalance0 = interpretAsDecimal(
+          interaction.underlyingBalance0,
+          token0.decimals
+        );
+        const underlyingBalance1 = interpretAsDecimal(
+          interaction.underlyingBalance1,
+          token1.decimals
+        );
+        const token0_to_usd = interactionToken0ToNative.mul(interactionNativeToUsd);
+        const token1_to_usd = interactionToken1ToNative.mul(interactionNativeToUsd);
+        const usd_balance = underlyingBalance0
+          .mul(token0_to_usd)
+          .add(underlyingBalance1.mul(token1_to_usd));
+        const share_diff = interpretAsDecimal(interaction.sharesBalanceDelta, shareToken.decimals);
+        const underlying_diff0 = interpretAsDecimal(
+          interaction.underlyingBalance0Delta,
+          token0.decimals
+        );
+        const underlying_diff1 = interpretAsDecimal(
+          interaction.underlyingBalance1Delta,
+          token1.decimals
+        );
+        const usd_diff = underlying_diff0
+          .mul(token0_to_usd)
+          .add(underlying_diff1.mul(token1_to_usd));
+        return {
+          datetime: new Date(parseInt(interaction.timestamp, 10) * 1000).toISOString(),
+          product_key: `beefy:vault:${chainRes.chain}:${position.vault.address}`,
+          display_name: position.vault.sharesToken.name,
+          chain: chainRes.chain,
+          is_eol: false,
+          is_dashboard_eol: false,
+          transaction_hash: interaction.createdWith.hash,
+          token0_to_usd: token0_to_usd.toString(),
+          token1_to_usd: token1_to_usd.toString(),
+          share_balance: share_balance.toString(),
+          underlying0_balance: underlyingBalance0.toString(),
+          underlying1_balance: underlyingBalance1.toString(),
+          usd_balance: usd_balance.toString(),
+          share_diff: share_diff.toString(),
+          underlying_diff0: underlying_diff0.toString(),
+          underlying_diff1: underlying_diff1.toString(),
+          usd_diff: usd_diff.toString(),
+        };
+      })
+    )
+  );
 
   return res;
 };
