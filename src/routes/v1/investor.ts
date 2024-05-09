@@ -94,17 +94,17 @@ const getTimeline = async (investor_address: string) => {
           .mul(token0_to_usd)
           .add(underlyingBalance1.mul(token1_to_usd));
         const share_diff = interpretAsDecimal(interaction.sharesBalanceDelta, shareToken.decimals);
-        const underlying_diff0 = interpretAsDecimal(
+        const underlying0_diff = interpretAsDecimal(
           interaction.underlyingBalance0Delta,
           token0.decimals
         );
-        const underlying_diff1 = interpretAsDecimal(
+        const underlying1_diff = interpretAsDecimal(
           interaction.underlyingBalance1Delta,
           token1.decimals
         );
-        const usd_diff = underlying_diff0
+        const usd_diff = underlying0_diff
           .mul(token0_to_usd)
-          .add(underlying_diff1.mul(token1_to_usd));
+          .add(underlying1_diff.mul(token1_to_usd));
         return {
           datetime: new Date(parseInt(interaction.timestamp, 10) * 1000).toISOString(),
           product_key: `beefy:vault:${chainRes.chain}:${position.vault.address}`,
@@ -120,8 +120,8 @@ const getTimeline = async (investor_address: string) => {
           underlying1_balance: underlyingBalance1.toString(),
           usd_balance: usd_balance.toString(),
           share_diff: share_diff.toString(),
-          underlying_diff0: underlying_diff0.toString(),
-          underlying_diff1: underlying_diff1.toString(),
+          underlying0_diff: underlying0_diff.toString(),
+          underlying1_diff: underlying1_diff.toString(),
           usd_diff: usd_diff.toString(),
         };
       })
