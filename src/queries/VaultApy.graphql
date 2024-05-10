@@ -1,0 +1,33 @@
+fragment Token on Token {
+  name
+  symbol
+  decimals
+}
+
+query VaultApy($first: Int = 100, $skip: Int = 0) {
+  beefyCLVaults(first: 1000, skip: 0) {
+    vault_address: id
+    sharesToken {
+      ...Token
+    }
+    underlyingToken0 {
+      ...Token
+    }
+    underlyingToken1 {
+      ...Token
+    }
+    totalSupply
+    collectedFees(first: $first, skip: $skip, orderBy: timestamp, orderDirection: desc) {
+      timestamp
+      underlyingMainAmount0
+      underlyingMainAmount1
+      underlyingAltAmount0
+      underlyingAltAmount1
+      collectedAmount0
+      collectedAmount1
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+  }
+}
