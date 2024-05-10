@@ -5,7 +5,7 @@ fragment Token on Token {
 }
 
 query VaultApy($first: Int = 100, $skip: Int = 0) {
-  beefyCLVaults(first: 1000, skip: 0) {
+  beefyCLVaults(first: 1000, skip: 0, where: { lifecycle_not: INITIALIZING }) {
     vault_address: id
     sharesToken {
       ...Token

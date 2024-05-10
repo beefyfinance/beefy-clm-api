@@ -6,6 +6,9 @@ import { sdk } from '../../utils/sdk';
 import { chainSchema } from '../../schema/chain';
 import { calculateLastApr, prepareAprState } from '../../utils/apr';
 import { interpretAsDecimal } from '../../utils/decimal';
+import { getLoggerFor } from '../../utils/log';
+
+const logger = getLoggerFor('/api/v1/chain');
 
 export default async function (
   instance: FastifyInstance,
@@ -52,6 +55,7 @@ const getApy = async (chain: string | null) => {
           // we only need the first 50 entries as we only need the daily APR
           .VaultApy({ first: 50, skip: 0 }, { chainName: chain })
           .catch((e: unknown) => {
+            logger.error('Failed to fetch APY data', e);
             // we have nothing to leak here
             throw new GraphQueryError(e);
           })
