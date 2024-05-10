@@ -13,6 +13,10 @@
     "dev:start": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
     "prettier:check": "prettier --check src/**/*.{ts,graphql}",
     "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
+    "test": "npm run test:ts && npm run test:unit && npm run test:lint",
+    "test:unit": "jest",
+    "test:ts": "tsc --noEmit",
+    "test:lint": "npm run prettier:check",
     "package:check": "ncu",
     "package:fix": "ncu -u && npm install",
     "postinstall": "npm --silent run codegen",
@@ -43,13 +47,17 @@
     "src/**/*.{ts,tsx,graphql,json}": "prettier --write"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.30",
     "dotenv": "^16.4.5",
     "husky": "^9.0.11",
+    "jest": "^29.7.0",
     "lint-staged": "^15.2.2",
     "npm-check-updates": "^16.14.18",
     "pino-pretty": "^11.0.0",
     "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.3"
