@@ -19,12 +19,22 @@ export default async function (
   {
     type QueryParams = {
       chain?: string;
+      precision?: number;
     };
 
-    const queryParamsSchema = S.object().prop(
-      'chain',
-      chainSchema.description('The chain to filter on. If not provided, all chains are returned')
-    );
+    const queryParamsSchema = S.object()
+      .prop(
+        'chain',
+        chainSchema.description('The chain to filter on. If not provided, all chains are returned')
+      )
+      .prop(
+        'precision',
+        S.integer()
+          .minimum(0)
+          .maximum(18)
+          .default(6)
+          .description('The number of decimal places to round to')
+      );
 
     const responseSchema = S.array().items(S.object());
 
@@ -37,8 +47,8 @@ export default async function (
     };
 
     instance.get<{ Querystring: QueryParams }>('/apy', { schema }, async (request, reply) => {
-      const { chain: maybeChain } = request.query;
-      const result = await getApy(maybeChain || null);
+      const { chain: maybeChain, precision } = request.query;
+      const result = await getApy(maybeChain || null, precision || 6);
       reply.send(result);
     });
   }
@@ -46,7 +56,7 @@ export default async function (
   done();
 }
 
-const getApy = async (chain: string | null) => {
+const getApy = async (chain: string | null, precision: number) => {
   const res = await Promise.all(
     allChainIds
       .filter(chainId => chain === null || chain === chainId)
@@ -95,8 +105,8 @@ const getApy = async (chain: string | null) => {
       return {
         chain: chainVaults.chain,
         vault_address: vaultData.vault_address,
-        apr_24h: res.apr.toFixed(6),
-        apy_24h: res.apy.toFixed(6),
+        apr_24h: res.apr.toFixed(precision),
+        apy_24h: res.apy.toFixed(precision),
       };
     })
   );
