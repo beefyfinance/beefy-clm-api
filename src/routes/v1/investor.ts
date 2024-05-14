@@ -70,14 +70,8 @@ const getTimeline = async (investor_address: string) => {
         const shareToken = position.vault.sharesToken;
         const token0 = position.vault.underlyingToken0;
         const token1 = position.vault.underlyingToken1;
-        const interactionToken0ToNative = interpretAsDecimal(
-          interaction.token0ToNativePrice,
-          token0.decimals
-        );
-        const interactionToken1ToNative = interpretAsDecimal(
-          interaction.token1ToNativePrice,
-          token1.decimals
-        );
+        const interactionToken0ToNative = interpretAsDecimal(interaction.token0ToNativePrice, 18);
+        const interactionToken1ToNative = interpretAsDecimal(interaction.token1ToNativePrice, 18);
         const interactionNativeToUsd = interpretAsDecimal(interaction.nativeToUSDPrice, 18);
         const share_balance = interpretAsDecimal(interaction.sharesBalance, shareToken.decimals);
         const underlyingBalance0 = interpretAsDecimal(
