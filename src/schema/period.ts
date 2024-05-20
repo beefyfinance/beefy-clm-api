@@ -1,6 +1,7 @@
 import { S } from 'fluent-json-schema';
 
 const periodToSeconds = {
+  '1h': 3600,
   '1d': 86400,
 } as const;
 

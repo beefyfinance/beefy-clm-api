@@ -5,7 +5,7 @@ export const addressSchema = S.string()
   .maxLength(42)
   .pattern(/^0x[a-fA-F0-9]{40}$/)
   .examples([
-    '0x5e1caC103F943Cd84A1E92dAde4145664ebf692A',
-    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-    '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+    '0xe3EAc56810C885067dC4C43A8049A07D9Bb127a4',
+    '0x9aA49971f4956D7831b2CD1c9AF7ED931b5f91BC',
+    '0x4C32b8d26E6ab2Ce401772514C999768f63Afb4e',
   ]);
