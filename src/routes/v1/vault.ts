@@ -40,6 +40,16 @@ export default async function (
         reply.send(result);
       }
     );
+
+    instance.get<{ Params: UrlParams }>(
+      '/:vault_address/harvests',
+      { schema },
+      async (request, reply) => {
+        const { vault_address } = request.params;
+        const result = await getVaultHarvests(vault_address);
+        reply.send(result);
+      }
+    );
   }
 
   done();
@@ -60,6 +70,31 @@ const getVaultPrices = async (vault_address: string) => {
           throw new GraphQueryError(e);
         })
         .then(res => ({ chain, ...res }))
+    )
+  );
+
+  return res;
+};
+
+const getVaultHarvests = async (vault_address: string) => {
+  const res = await Promise.all(
+    allChainIds.map(chain =>
+      sdk
+        .SingleVaultHarvests(
+          {
+            vault_address,
+          },
+          { chainName: chain }
+        )
+        .catch((e: unknown) => {
+          // we have nothing to leak here
+          throw new GraphQueryError(e);
+        })
+        .then(res => {
+          console.log(chain);
+          console.log(res);
+          return { chain, ...res };
+        })
     )
   );
 
