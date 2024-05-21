@@ -50,6 +50,43 @@ export default async function (
     );
   }
 
+  //vault harvests
+  {
+    type UrlParams = {
+      chain: ChainId;
+      vault_address: string;
+    };
+
+    const urlParamsSchema = S.object()
+      .prop('chain', chainSchema.required().description('The chain the vault is on'))
+      .prop('vault_address', addressSchema.required().description('The vault contract address'));
+
+    const responseSchema = S.array().items(S.object());
+
+    const schema: FastifySchema = {
+      tags: ['v1'],
+      params: urlParamsSchema,
+      response: {
+        200: responseSchema,
+      },
+    };
+
+    instance.get<{ Params: UrlParams }>(
+      '/:chain/:vault_address/harvests',
+      { schema },
+      async (request, reply) => {
+        const { chain, vault_address } = request.params;
+        const result = await getVaultHarvests(chain, vault_address);
+        if (result === undefined) {
+          reply.status(404);
+          reply.send({ error: 'Vault not found' });
+          return;
+        }
+        reply.send(result);
+      }
+    );
+  }
+
   // historical prices
   {
     type UrlParams = {
@@ -155,6 +192,26 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
     current: res.beefyCLVault.priceOfToken0InToken1,
     max: res.beefyCLVault.priceRangeMax1,
   };
+};
+
+const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
+  const res = await sdk
+    .VaultHarvests(
+      {
+        vault_address,
+      },
+      { chainName: chain }
+    )
+    .catch((e: unknown) => {
+      // we have nothing to leak here
+      throw new GraphQueryError(e);
+    });
+
+  if (!res.beefyCLVaultHarvestEvents) {
+    return undefined;
+  }
+
+  return res.beefyCLVaultHarvestEvents;
 };
 
 const getVaultHistoricPrices = async (
