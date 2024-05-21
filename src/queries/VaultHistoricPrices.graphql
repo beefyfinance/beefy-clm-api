@@ -1,0 +1,22 @@
+query VaultHistoricPrices(
+  $vault_address: ID!
+  $since: BigInt!
+  $period: BigInt!
+  $first: Int = 1000
+  $skip: Int = 0
+) {
+  beefyCLVault(id: $vault_address) {
+    snapshots(
+      first: $first
+      skip: $skip
+      orderBy: roundedTimestamp
+      orderDirection: asc
+      where: { roundedTimestamp_gte: $since, period: $period }
+    ) {
+      roundedTimestamp
+      priceRangeMin1
+      priceOfToken0InToken1
+      priceRangeMax1
+    }
+  }
+}

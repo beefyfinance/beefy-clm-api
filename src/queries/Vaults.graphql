@@ -4,20 +4,24 @@ fragment Token on Token {
   decimals
 }
 
-query VaultApy($first: Int = 100, $skip: Int = 0) {
-  beefyCLVaults(first: 1000, skip: 0, where: { lifecycle_not: INITIALIZING }) {
-    vault_address: id
-    sharesToken {
-      ...Token
-    }
+query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
+  beefyCLVaults(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    vaultAddress: id
+    priceOfToken0InToken1
+    priceRangeMin1
+    priceRangeMax1
     underlyingToken0 {
       ...Token
     }
     underlyingToken1 {
       ...Token
     }
-    totalSupply
-    collectedFees(first: $first, skip: $skip, orderBy: timestamp, orderDirection: desc) {
+    collectedFees(
+      first: 1000
+      where: { timestamp_gte: $since }
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
       timestamp
       underlyingMainAmount0
       underlyingMainAmount1
@@ -27,7 +31,6 @@ query VaultApy($first: Int = 100, $skip: Int = 0) {
       collectedAmount1
       token0ToNativePrice
       token1ToNativePrice
-      nativeToUSDPrice
     }
   }
 }
