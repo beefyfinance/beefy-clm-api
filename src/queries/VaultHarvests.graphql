@@ -1,0 +1,13 @@
+query VaultHarvests($vault_address: String!) {
+  beefyCLVaultHarvestEvents(
+    where: { vault: $vault_address }
+    orderBy: timestamp
+    orderDirection: desc
+    first: 1000
+  ) {
+    timestamp
+    compoundedAmount0
+    compoundedAmount1
+    totalSupply
+  }
+}
