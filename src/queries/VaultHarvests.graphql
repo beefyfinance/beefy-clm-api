@@ -8,6 +8,9 @@ query VaultHarvests($vault_address: String!) {
     timestamp
     compoundedAmount0
     compoundedAmount1
+    token0ToNativePrice
+    token1ToNativePrice
+    nativeToUSDPrice
     totalSupply
   }
 }
