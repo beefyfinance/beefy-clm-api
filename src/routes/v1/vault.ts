@@ -7,6 +7,7 @@ import { sdk } from '../../utils/sdk';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
+import { interpretAsDecimal } from '../../utils/decimal';
 
 export default async function (
   instance: FastifyInstance,
@@ -211,7 +212,20 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
     return undefined;
   }
 
-  return res.beefyCLVaultHarvestEvents;
+  return res.beefyCLVaultHarvestEvents.map(harvest => {
+    const token0ToNativePrice = interpretAsDecimal(harvest.token0ToNativePrice, 18);
+    const token1ToNativePrice = interpretAsDecimal(harvest.token1ToNativePrice, 18);
+    const nativeToUsd = interpretAsDecimal(harvest.nativeToUSDPrice, 18);
+
+    return {
+      timestamp: harvest.timestamp,
+      compoundedAmount0: harvest.compoundedAmount0,
+      compoundedAmount1: harvest.compoundedAmount1,
+      token0ToUsd: token0ToNativePrice.mul(nativeToUsd).toString(),
+      token1ToUsd: token1ToNativePrice.mul(nativeToUsd).toString(),
+      totalSupply: harvest.totalSupply,
+    };
+  });
 };
 
 const getVaultHistoricPrices = async (
