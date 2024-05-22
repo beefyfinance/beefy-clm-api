@@ -208,22 +208,33 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  if (!res.beefyCLVaultHarvestEvents) {
+  if (!res.beefyCLVault) {
     return undefined;
   }
 
-  return res.beefyCLVaultHarvestEvents.map(harvest => {
+  const vault = res.beefyCLVault;
+
+  return vault.harvests.map(harvest => {
     const token0ToNativePrice = interpretAsDecimal(harvest.token0ToNativePrice, 18);
     const token1ToNativePrice = interpretAsDecimal(harvest.token1ToNativePrice, 18);
     const nativeToUsd = interpretAsDecimal(harvest.nativeToUSDPrice, 18);
+    const compoundedAmount0 = interpretAsDecimal(
+      harvest.compoundedAmount0,
+      vault.underlyingToken0.decimals
+    );
+    const compoundedAmount1 = interpretAsDecimal(
+      harvest.compoundedAmount1,
+      vault.underlyingToken1.decimals
+    );
+    const totalSupply = interpretAsDecimal(harvest.totalSupply, vault.sharesToken.decimals);
 
     return {
       timestamp: harvest.timestamp,
-      compoundedAmount0: harvest.compoundedAmount0,
-      compoundedAmount1: harvest.compoundedAmount1,
+      compoundedAmount0: compoundedAmount0.toString(),
+      compoundedAmount1: compoundedAmount1.toString(),
       token0ToUsd: token0ToNativePrice.mul(nativeToUsd).toString(),
       token1ToUsd: token1ToNativePrice.mul(nativeToUsd).toString(),
-      totalSupply: harvest.totalSupply,
+      totalSupply: totalSupply.toString(),
     };
   });
 };
