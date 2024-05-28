@@ -6,10 +6,12 @@ import { sdk } from '../../utils/sdk';
 import { chainSchema } from '../../schema/chain';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { pick } from 'lodash';
-import { VaultsQuery } from '../../../.graphclient/index';
+import { VaultsQuery } from '../../../.graphclient';
 import { calculateLastApr, prepareAprState } from '../../utils/apr';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
+import { addressSchema } from '../../schema/address';
+import { Address } from 'viem';
 
 export default async function (
   instance: FastifyInstance,
@@ -52,6 +54,10 @@ export default async function (
       since: number;
     };
 
+    type QueryParams = {
+      vaults?: Address[];
+    };
+
     const urlParamsSchema = S.object()
       .prop(
         'chain',
@@ -62,23 +68,31 @@ export default async function (
         S.number().required().description('The unix timestamp to return harvests since')
       );
 
+    const queryParamsSchema = S.object().prop(
+      'vaults',
+      S.array()
+        .items(addressSchema.description('A vault address'))
+        .description('The vault addresses to return harvests for')
+    );
+
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
       tags: ['v1'],
       params: urlParamsSchema,
+      querystring: queryParamsSchema,
       response: {
         200: responseSchema,
       },
     };
 
-    instance.get<{ Params: UrlParams }>(
+    instance.get<{ Params: UrlParams; Querystring: QueryParams }>(
       '/:chain/harvests/:since',
       { schema },
       async (request, reply) => {
         const { chain, since } = request.params;
-
-        const result = await getVaultsHarvests(chain, since);
+        const vaults = request.query.vaults || [];
+        const result = await getVaultsHarvests(chain, since, vaults);
         reply.send(result);
       }
     );
@@ -131,26 +145,38 @@ const getVaultApy = (vault: VaultsQuery['beefyCLVaults'][0], periodSeconds: numb
   return calculateLastApr(aprState, periodSeconds * 1000, now);
 };
 
-const getVaultsHarvests = async (chain: ChainId, since: number) => {
-  const rawVaults = await sdk
-    .VaultsHarvests({ since: since.toString() }, { chainName: chain })
-    .catch((e: unknown) => {
-      throw new GraphQueryError(e);
+type VaultsHarvests = { vaultAddress: string; harvests: PreparedVaultHarvest[] }[];
+
+const getVaultsHarvests = async (
+  chain: ChainId,
+  since: number,
+  vaults: Address[]
+): Promise<VaultsHarvests> => {
+  const options = { chainName: chain };
+  const queryPromise = vaults.length
+    ? sdk.VaultsHarvestsFiltered(
+        {
+          since: since.toString(),
+          vaults: vaults.map(v => v.toLowerCase()),
+        },
+        options
+      )
+    : sdk.VaultsHarvests({ since: since.toString() }, options);
+
+  const rawVaults = await queryPromise.catch((e: unknown) => {
+    throw new GraphQueryError(e);
+  });
+
+  return rawVaults.beefyCLVaults.reduce((acc, vault): VaultsHarvests => {
+    if (vault.harvests.length === 0) {
+      return acc;
+    }
+
+    acc.push({
+      vaultAddress: String(vault.vaultAddress),
+      harvests: prepareVaultHarvests(vault),
     });
 
-  return rawVaults.beefyCLVaults.reduce(
-    (acc, vault) => {
-      if (vault.harvests.length === 0) {
-        return acc;
-      }
-
-      acc.push({
-        vaultAddress: vault.vaultAddress,
-        harvests: prepareVaultHarvests(vault),
-      });
-
-      return acc;
-    },
-    [] as { vaultAddress: string; harvests: PreparedVaultHarvest[] }[]
-  );
+    return acc;
+  }, [] as VaultsHarvests);
 };
