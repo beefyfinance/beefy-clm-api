@@ -8,6 +8,7 @@ import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { interpretAsDecimal } from '../../utils/decimal';
+import { BeefyCLVaultHarvestEvent, Token } from '../../../.graphclient';
 
 export default async function (
   instance: FastifyInstance,
@@ -51,7 +52,7 @@ export default async function (
     );
   }
 
-  //vault harvests
+  // vault harvests
   {
     type UrlParams = {
       chain: ChainId;
@@ -212,8 +213,34 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
     return undefined;
   }
 
-  const vault = res.beefyCLVault;
+  return prepareVaultHarvests(res.beefyCLVault);
+};
 
+export type PreparedVaultHarvest = {
+  timestamp: string;
+  compoundedAmount0: string;
+  compoundedAmount1: string;
+  token0ToUsd: string;
+  token1ToUsd: string;
+  totalSupply: string;
+};
+export function prepareVaultHarvests(vault: {
+  underlyingToken0: Pick<Token, 'decimals'>;
+  underlyingToken1: Pick<Token, 'decimals'>;
+  sharesToken: Pick<Token, 'decimals'>;
+  harvests: Array<
+    Pick<
+      BeefyCLVaultHarvestEvent,
+      | 'timestamp'
+      | 'compoundedAmount0'
+      | 'compoundedAmount1'
+      | 'token0ToNativePrice'
+      | 'token1ToNativePrice'
+      | 'nativeToUSDPrice'
+      | 'totalSupply'
+    >
+  >;
+}): PreparedVaultHarvest[] {
   return vault.harvests.map(harvest => {
     const token0ToNativePrice = interpretAsDecimal(harvest.token0ToNativePrice, 18);
     const token1ToNativePrice = interpretAsDecimal(harvest.token1ToNativePrice, 18);
@@ -237,7 +264,7 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
       totalSupply: totalSupply.toString(),
     };
   });
-};
+}
 
 const getVaultHistoricPrices = async (
   chain: ChainId,
