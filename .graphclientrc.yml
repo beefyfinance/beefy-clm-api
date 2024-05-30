@@ -5,8 +5,7 @@ sources:
   - name: beefy-clm
     handler:
       graphql:
-        endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefyfinance/clm-{context.chainName:arbitrum}/gn
-        #endpoint: https://api.0xgraph.xyz/subgraphs/name/beefyfinance/clm-{context.chainName:arbitrum}
+        endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefy-clm-{context.chainName:arbitrum}/latest/gn
     transforms:
       - autoTypeMerging: true
       - autoPagination: {}
