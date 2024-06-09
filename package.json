@@ -10,7 +10,7 @@
     "prepare": "husky",
     "build": "tsc",
     "start": "node build/src/index.js",
-    "dev:start": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
+    "dev": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
     "prettier:check": "prettier --check src/**/*.{ts,graphql}",
     "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
     "test": "npm run test:ts && npm run test:unit && npm run test:lint",

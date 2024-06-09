@@ -1,0 +1,78 @@
+fragment Token on Token {
+  name
+  symbol
+  decimals
+}
+
+query InvestorTimelineV2($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
+  classicPositions(skip: 0, first: 1000, where: { investor: $investor_address }) {
+    classic {
+      address: id
+      vaultSharesToken {
+        ...Token
+      }
+      underlyingToken {
+        ...Token
+      }
+      vaultSharesTotalSupply
+      underlyingToNativePrice
+      nativeToUSDPrice
+    }
+    vaultBalance
+    boostBalance
+    interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
+      timestamp
+      blockNumber
+      createdWith {
+        hash: id
+      }
+      vaultBalance
+      boostBalance
+      vaultBalanceDelta
+      boostBalanceDelta
+      underlyingToNativePrice
+      nativeToUSDPrice
+    }
+  }
+  clmPositions(skip: 0, first: 1000, where: { investor: $investor_address }) {
+    clm {
+      address: id
+      managerToken {
+        ...Token
+      }
+      underlyingToken0 {
+        ...Token
+      }
+      underlyingToken1 {
+        ...Token
+      }
+      rewardPoolToken {
+        ...Token
+      }
+      managerTotalSupply
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+    managerBalance
+    rewardPoolBalance
+    interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
+      timestamp
+      blockNumber
+      createdWith {
+        hash: id
+      }
+      managerBalance
+      rewardPoolBalance
+      underlyingBalance0
+      underlyingBalance1
+      managerBalanceDelta
+      rewardPoolBalanceDelta
+      underlyingBalance0Delta
+      underlyingBalance1Delta
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+  }
+}
