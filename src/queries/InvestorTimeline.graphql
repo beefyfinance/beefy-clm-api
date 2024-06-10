@@ -12,7 +12,6 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
   ) {
     vault {
       address: id
-
       sharesToken {
         ...Token
       }
@@ -22,7 +21,6 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
       underlyingToken1 {
         ...Token
       }
-
       totalSupply
       token0ToNativePrice
       token1ToNativePrice
@@ -39,6 +37,41 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
       underlyingBalance0
       underlyingBalance1
       sharesBalanceDelta
+      underlyingBalance0Delta
+      underlyingBalance1Delta
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+  }
+  clmPositions(skip: 0, first: 1000, where: { investor: $investor_address, managerBalance_gt: 0 }) {
+    vault: clm {
+      address: id
+      sharesToken: managerToken {
+        ...Token
+      }
+      underlyingToken0 {
+        ...Token
+      }
+      underlyingToken1 {
+        ...Token
+      }
+      totalSupply: managerTotalSupply
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+    }
+    sharesBalance: managerBalance
+    interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
+      timestamp
+      blockNumber
+      createdWith {
+        hash: id
+      }
+      sharesBalance: managerBalance
+      underlyingBalance0
+      underlyingBalance1
+      sharesBalanceDelta: managerBalanceDelta
       underlyingBalance0Delta
       underlyingBalance1Delta
       token0ToNativePrice

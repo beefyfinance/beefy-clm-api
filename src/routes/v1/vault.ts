@@ -185,14 +185,15 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  if (!res.beefyCLVault) {
+  const vault = res.clm || res.beefyCLVault;
+  if (!vault) {
     return undefined;
   }
 
   return {
-    min: res.beefyCLVault.priceRangeMin1,
-    current: res.beefyCLVault.priceOfToken0InToken1,
-    max: res.beefyCLVault.priceRangeMax1,
+    min: vault.priceRangeMin1,
+    current: vault.priceOfToken0InToken1,
+    max: vault.priceRangeMax1,
   };
 };
 
@@ -209,11 +210,12 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  if (!res.beefyCLVault) {
+  const vault = res.clm || res.beefyCLVault;
+  if (!vault) {
     return undefined;
   }
 
-  return prepareVaultHarvests(res.beefyCLVault);
+  return prepareVaultHarvests(vault);
 };
 
 export type PreparedVaultHarvest = {
@@ -286,15 +288,16 @@ const getVaultHistoricPrices = async (
       throw new GraphQueryError(e);
     });
 
-  if (!res.beefyCLVault) {
+  const vault = res.clm || res.beefyCLVault;
+  if (!vault) {
     return undefined;
   }
 
-  if (!res.beefyCLVault.snapshots?.length) {
+  if (!vault.snapshots?.length) {
     return [];
   }
 
-  return res.beefyCLVault.snapshots.map(snapshot => ({
+  return vault.snapshots.map(snapshot => ({
     t: parseInt(snapshot.roundedTimestamp),
     min: snapshot.priceRangeMin1,
     v: snapshot.priceOfToken0InToken1,
@@ -320,12 +323,13 @@ const getVaultHistoricPricesRange = async (
       throw new GraphQueryError(e);
     });
 
-  if (!res.beefyCLVault) {
+  const vault = res.clm || res.beefyCLVault;
+  if (!vault) {
     return undefined;
   }
 
   return {
-    min: parseInt(res.beefyCLVault.minSnapshot?.[0]?.roundedTimestamp || 0),
-    max: parseInt(res.beefyCLVault.maxSnapshot?.[0]?.roundedTimestamp || 0),
+    min: parseInt(vault.minSnapshot?.[0]?.roundedTimestamp || 0),
+    max: parseInt(vault.maxSnapshot?.[0]?.roundedTimestamp || 0),
   };
 };

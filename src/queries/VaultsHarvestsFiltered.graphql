@@ -34,4 +34,30 @@ query VaultsHarvestsFiltered(
       totalSupply
     }
   }
+  clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING, id_in: $vaults }) {
+    vaultAddress: id
+    underlyingToken0 {
+      decimals
+    }
+    underlyingToken1 {
+      decimals
+    }
+    sharesToken: managerToken {
+      decimals
+    }
+    harvests(
+      orderBy: timestamp
+      orderDirection: desc
+      first: 1000
+      where: { timestamp_gte: $since }
+    ) {
+      timestamp
+      compoundedAmount0
+      compoundedAmount1
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+      totalSupply: managerTotalSupply
+    }
+  }
 }
