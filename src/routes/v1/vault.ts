@@ -185,7 +185,7 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.beefyCLVault || res.clm;
+  const vault = res.clm || res.beefyCLVault;
   if (!vault) {
     return undefined;
   }
@@ -210,7 +210,7 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.beefyCLVault || res.clm;
+  const vault = res.clm || res.beefyCLVault;
   if (!vault) {
     return undefined;
   }
@@ -288,7 +288,7 @@ const getVaultHistoricPrices = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.beefyCLVault || res.clm;
+  const vault = res.clm || res.beefyCLVault;
   if (!vault) {
     return undefined;
   }
@@ -323,7 +323,7 @@ const getVaultHistoricPricesRange = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.beefyCLVault || res.clm;
+  const vault = res.clm || res.beefyCLVault;
   if (!vault) {
     return undefined;
   }

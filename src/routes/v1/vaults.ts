@@ -107,11 +107,12 @@ const getVaults = async (chain: ChainId, period: Period) => {
   const since = BigInt(Math.floor(now.getTime() / 1000) - periodSeconds);
   const rawVaults = await sdk
     .Vaults({ since: since.toString() }, { chainName: chain })
+    .then(res => [...res.beefyCLVaults, ...res.clms])
     .catch((e: unknown) => {
       throw new GraphQueryError(e);
     });
 
-  return rawVaults.beefyCLVaults.map(vault => ({
+  return rawVaults.map(vault => ({
     ...pick(vault, ['vaultAddress', 'priceOfToken0InToken1', 'priceRangeMin1', 'priceRangeMax1']),
     ...getVaultApy(vault, periodSeconds, now),
   }));
