@@ -15,8 +15,8 @@ sources:
   - name: beefy-clm-new
     handler:
       graphql:
-        #endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefy-clm-{context.chainName:arbitrum}/clm/gn
-        endpoint: https://api.goldsky.com/api/public/project_clu70vqkdaz8c010u86i5198g/subgraphs/beefy-clm-{context.chainName:optimism}-tmp-dev/0.0.1/gn
+        endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefy-clm-{context.chainName:arbitrum}/clm/gn
+        #endpoint: https://api.goldsky.com/api/public/project_clu70vqkdaz8c010u86i5198g/subgraphs/beefy-clm-{context.chainName:optimism}-tmp-dev/0.0.1/gn
     transforms:
       - autoTypeMerging: true
       - autoPagination: 
