@@ -163,11 +163,13 @@ const getVaultsHarvests = async (
       )
     : sdk.VaultsHarvests({ since: since.toString() }, options);
 
-  const rawVaults = await queryPromise.catch((e: unknown) => {
-    throw new GraphQueryError(e);
-  });
+  const rawVaults = await queryPromise
+    .then(res => [...res.beefyCLVaults, ...res.clms])
+    .catch((e: unknown) => {
+      throw new GraphQueryError(e);
+    });
 
-  return rawVaults.beefyCLVaults.reduce((acc, vault): VaultsHarvests => {
+  return rawVaults.reduce((acc, vault): VaultsHarvests => {
     if (vault.harvests.length === 0) {
       return acc;
     }
