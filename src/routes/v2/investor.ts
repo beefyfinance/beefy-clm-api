@@ -49,23 +49,20 @@ export default async function (
 
 const getTimeline = async (investor_address: string) => {
   const res = await Promise.all(
-    allChainIds
-      // TODO: remove
-      .filter(chain => chain === 'optimism')
-      .map(chain =>
-        sdk
-          .InvestorTimelineV2(
-            {
-              investor_address,
-            },
-            { chainName: chain }
-          )
-          .catch((e: unknown) => {
-            // we have nothing to leak here
-            throw new GraphQueryError(e);
-          })
-          .then(res => ({ chain, ...res }))
-      )
+    allChainIds.map(chain =>
+      sdk
+        .InvestorTimelineV2(
+          {
+            investor_address,
+          },
+          { chainName: chain }
+        )
+        .catch((e: unknown) => {
+          // we have nothing to leak here
+          throw new GraphQueryError(e);
+        })
+        .then(res => ({ chain, ...res }))
+    )
   );
 
   return res.flatMap(chainRes => {
