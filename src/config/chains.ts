@@ -15,14 +15,14 @@ export const chains = toChainMap([
     id: 'arbitrum',
     name: 'Arbitrum',
   },
-  //{
-  //  id: 'base',
-  //  name: 'Base',
-  //},
-  //{
-  //  id: 'optimism',
-  //  name: 'Optimism',
-  //},
+  {
+    id: 'base',
+    name: 'Base',
+  },
+  {
+    id: 'optimism',
+    name: 'Optimism',
+  },
 ] as const satisfies ReadonlyArray<Chain>);
 
 export type Chains = typeof chains;
