@@ -3,7 +3,6 @@ import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
 import { API_ENV } from '../config/env';
 import V1 from './v1';
-import V2 from './v2';
 
 export default async function (
   instance: FastifyInstance,
@@ -29,7 +28,6 @@ export default async function (
     .get('/openapi.json', { config: { rateLimit: false } }, (_req, reply) => {
       reply.send(instance.swagger());
     })
-    .register(V1, { prefix: '/v1' })
-    .register(V2, { prefix: '/v2' });
+    .register(V1, { prefix: '/v1' });
   done();
 }

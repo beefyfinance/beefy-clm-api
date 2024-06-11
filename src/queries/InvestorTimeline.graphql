@@ -5,14 +5,14 @@ fragment Token on Token {
 }
 
 query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
-  investorPositions(
+  beta_clmPositions(
     skip: 0
     first: 1000
-    where: { investor: $investor_address, sharesBalance_gt: 0 }
+    where: { investor: $investor_address, managerBalance_gt: 0 }
   ) {
-    vault {
+    vault: clm {
       address: id
-      sharesToken {
+      sharesToken: managerToken {
         ...Token
       }
       underlyingToken0 {
@@ -21,22 +21,22 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
       underlyingToken1 {
         ...Token
       }
-      totalSupply
+      totalSupply: managerTotalSupply
       token0ToNativePrice
       token1ToNativePrice
       nativeToUSDPrice
     }
-    sharesBalance
+    sharesBalance: managerBalance
     interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
       timestamp
       blockNumber
       createdWith {
         hash: id
       }
-      sharesBalance
+      sharesBalance: managerBalance
       underlyingBalance0
       underlyingBalance1
-      sharesBalanceDelta
+      sharesBalanceDelta: managerBalanceDelta
       underlyingBalance0Delta
       underlyingBalance1Delta
       token0ToNativePrice

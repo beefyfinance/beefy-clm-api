@@ -1,3 +1,9 @@
+fragment Token on Token {
+  name
+  symbol
+  decimals
+}
+
 query VaultHistoricPrices(
   $vault_address: ID!
   $since: BigInt!
@@ -5,7 +11,10 @@ query VaultHistoricPrices(
   $first: Int = 1000
   $skip: Int = 0
 ) {
-  beefyCLVault(id: $vault_address) {
+  beta_clm(id: $vault_address) {
+    underlyingToken1 {
+      ...Token
+    }
     snapshots(
       first: $first
       skip: $skip
@@ -20,6 +29,9 @@ query VaultHistoricPrices(
     }
   }
   clm(id: $vault_address) {
+    underlyingToken1 {
+      ...Token
+    }
     snapshots(
       first: $first
       skip: $skip

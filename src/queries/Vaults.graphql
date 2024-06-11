@@ -5,7 +5,7 @@ fragment Token on Token {
 }
 
 query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
-  beefyCLVaults(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+  beta_clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
     vaultAddress: id
     priceOfToken0InToken1
     priceRangeMin1
@@ -16,7 +16,7 @@ query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
     underlyingToken1 {
       ...Token
     }
-    collectedFees(
+    collectedFees: collections(
       first: 1000
       where: { timestamp_gte: $since }
       orderBy: timestamp
