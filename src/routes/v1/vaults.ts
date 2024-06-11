@@ -5,7 +5,6 @@ import { GraphQueryError } from '../../utils/error';
 import { sdk } from '../../utils/sdk';
 import { chainSchema } from '../../schema/chain';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
-import { pick } from 'lodash';
 import { VaultsQuery } from '../../../.graphclient';
 import { calculateLastApr, prepareAprState } from '../../utils/apr';
 import { interpretAsDecimal } from '../../utils/decimal';
@@ -112,10 +111,16 @@ const getVaults = async (chain: ChainId, period: Period) => {
       throw new GraphQueryError(e);
     });
 
-  return rawVaults.map(vault => ({
-    ...pick(vault, ['vaultAddress', 'priceOfToken0InToken1', 'priceRangeMin1', 'priceRangeMax1']),
-    ...getVaultApy(vault, periodSeconds, now),
-  }));
+  return rawVaults.map(vault => {
+    const token1 = vault.underlyingToken1;
+    return {
+      vaultAddress: vault.vaultAddress,
+      priceRangeMin1: interpretAsDecimal(vault.priceRangeMin1, token1.decimals),
+      priceOfToken0InToken1: interpretAsDecimal(vault.priceOfToken0InToken1, token1.decimals),
+      priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals),
+      ...getVaultApy(vault, periodSeconds, now),
+    };
+  });
 };
 
 const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: Date) => {
