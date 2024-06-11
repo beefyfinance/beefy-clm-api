@@ -3,7 +3,7 @@ import S from 'fluent-json-schema';
 import { ChainId } from '../../config/chains';
 import { addressSchema } from '../../schema/address';
 import { GraphQueryError } from '../../utils/error';
-import { sdk } from '../../utils/sdk';
+import { getSdkForChain } from '../../utils/sdk';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
@@ -173,13 +173,10 @@ export default async function (
 }
 
 const getVaultPrice = async (chain: ChainId, vault_address: string) => {
-  const res = await sdk
-    .VaultPrice(
-      {
-        vault_address,
-      },
-      { chainName: chain }
-    )
+  const res = await getSdkForChain(chain)
+    .VaultPrice({
+      vault_address,
+    })
     .catch((e: unknown) => {
       // we have nothing to leak here
       throw new GraphQueryError(e);
@@ -198,13 +195,10 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
 };
 
 const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
-  const res = await sdk
-    .VaultHarvests(
-      {
-        vault_address,
-      },
-      { chainName: chain }
-    )
+  const res = await getSdkForChain(chain)
+    .VaultHarvests({
+      vault_address,
+    })
     .catch((e: unknown) => {
       // we have nothing to leak here
       throw new GraphQueryError(e);
@@ -263,15 +257,12 @@ const getVaultHistoricPrices = async (
   period: Period,
   since: string
 ) => {
-  const res = await sdk
-    .VaultHistoricPrices(
-      {
-        vault_address,
-        period: getPeriodSeconds(period),
-        since,
-      },
-      { chainName: chain }
-    )
+  const res = await getSdkForChain(chain)
+    .VaultHistoricPrices({
+      vault_address,
+      period: getPeriodSeconds(period),
+      since,
+    })
     .catch((e: unknown) => {
       // we have nothing to leak here
       throw new GraphQueryError(e);
@@ -301,14 +292,11 @@ const getVaultHistoricPricesRange = async (
   vault_address: string,
   period: Period
 ) => {
-  const res = await sdk
-    .VaultHistoricPricesRange(
-      {
-        vault_address,
-        period: getPeriodSeconds(period),
-      },
-      { chainName: chain }
-    )
+  const res = await getSdkForChain(chain)
+    .VaultHistoricPricesRange({
+      vault_address,
+      period: getPeriodSeconds(period),
+    })
     .catch((e: unknown) => {
       // we have nothing to leak here
       throw new GraphQueryError(e);
