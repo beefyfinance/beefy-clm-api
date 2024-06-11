@@ -1,8 +1,5 @@
 query VaultHistoricPricesRange($vault_address: ID!, $period: BigInt!) {
   beta_clm(id: $vault_address) {
-    underlyingToken1 {
-      ...Token
-    }
     minSnapshot: snapshots(
       first: 1
       orderBy: roundedTimestamp
@@ -21,9 +18,6 @@ query VaultHistoricPricesRange($vault_address: ID!, $period: BigInt!) {
     }
   }
   clm(id: $vault_address) {
-    underlyingToken1 {
-      ...Token
-    }
     minSnapshot: snapshots(
       first: 1
       orderBy: roundedTimestamp
