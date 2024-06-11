@@ -57,15 +57,12 @@ const getTimeline = async (investor_address: string) => {
           { chainName: chain }
         )
         .catch((e: unknown) => {
-          throw e;
           // we have nothing to leak here
           throw new GraphQueryError(e);
         })
         .then(res => ({ chain, ...res }))
     )
   );
-
-  console.log(res);
 
   return res.flatMap(chainRes =>
     [...chainRes.clmPositions, ...chainRes.beta_clmPositions].flatMap(position =>
