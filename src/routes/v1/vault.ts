@@ -8,7 +8,7 @@ import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { interpretAsDecimal } from '../../utils/decimal';
-import { BeefyCLVaultHarvestEvent, Token } from '../../../.graphclient';
+import { HarvestDataFragment, Token } from '../../../.graphclient';
 
 export default async function (
   instance: FastifyInstance,
@@ -185,7 +185,7 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || res.beefyCLVault;
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -210,7 +210,7 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || res.beefyCLVault;
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -230,18 +230,7 @@ export function prepareVaultHarvests(vault: {
   underlyingToken0: Pick<Token, 'decimals'>;
   underlyingToken1: Pick<Token, 'decimals'>;
   sharesToken: Pick<Token, 'decimals'>;
-  harvests: Array<
-    Pick<
-      BeefyCLVaultHarvestEvent,
-      | 'timestamp'
-      | 'compoundedAmount0'
-      | 'compoundedAmount1'
-      | 'token0ToNativePrice'
-      | 'token1ToNativePrice'
-      | 'nativeToUSDPrice'
-      | 'totalSupply'
-    >
-  >;
+  harvests: Array<HarvestDataFragment>;
 }): PreparedVaultHarvest[] {
   return vault.harvests.map(harvest => {
     const token0ToNativePrice = interpretAsDecimal(harvest.token0ToNativePrice, 18);
@@ -288,7 +277,7 @@ const getVaultHistoricPrices = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || res.beefyCLVault;
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -323,7 +312,7 @@ const getVaultHistoricPricesRange = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || res.beefyCLVault;
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }

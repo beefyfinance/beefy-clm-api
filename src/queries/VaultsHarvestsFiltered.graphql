@@ -1,14 +1,20 @@
+fragment HarvestData on ClmHarvestEvent {
+  timestamp
+  compoundedAmount0
+  compoundedAmount1
+  token0ToNativePrice
+  token1ToNativePrice
+  nativeToUSDPrice
+  totalSupply: managerTotalSupply
+}
+
 query VaultsHarvestsFiltered(
   $since: BigInt!
   $first: Int = 1000
   $skip: Int = 0
   $vaults: [Bytes!]!
 ) {
-  beefyCLVaults(
-    first: $first
-    skip: $skip
-    where: { lifecycle_not: INITIALIZING, id_in: $vaults }
-  ) {
+  beta_clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING, id_in: $vaults }) {
     vaultAddress: id
     underlyingToken0 {
       decimals
@@ -16,7 +22,7 @@ query VaultsHarvestsFiltered(
     underlyingToken1 {
       decimals
     }
-    sharesToken {
+    sharesToken: managerToken {
       decimals
     }
     harvests(
@@ -25,13 +31,7 @@ query VaultsHarvestsFiltered(
       first: 1000
       where: { timestamp_gte: $since }
     ) {
-      timestamp
-      compoundedAmount0
-      compoundedAmount1
-      token0ToNativePrice
-      token1ToNativePrice
-      nativeToUSDPrice
-      totalSupply
+      ...HarvestData
     }
   }
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING, id_in: $vaults }) {
@@ -51,13 +51,7 @@ query VaultsHarvestsFiltered(
       first: 1000
       where: { timestamp_gte: $since }
     ) {
-      timestamp
-      compoundedAmount0
-      compoundedAmount1
-      token0ToNativePrice
-      token1ToNativePrice
-      nativeToUSDPrice
-      totalSupply: managerTotalSupply
+      ...HarvestData
     }
   }
 }

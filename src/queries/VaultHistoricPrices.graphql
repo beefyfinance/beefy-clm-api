@@ -5,7 +5,7 @@ query VaultHistoricPrices(
   $first: Int = 1000
   $skip: Int = 0
 ) {
-  beefyCLVault(id: $vault_address) {
+  beta_clm(id: $vault_address) {
     snapshots(
       first: $first
       skip: $skip

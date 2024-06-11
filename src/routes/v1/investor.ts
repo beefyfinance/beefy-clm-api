@@ -57,6 +57,7 @@ const getTimeline = async (investor_address: string) => {
           { chainName: chain }
         )
         .catch((e: unknown) => {
+          throw e;
           // we have nothing to leak here
           throw new GraphQueryError(e);
         })
@@ -64,8 +65,10 @@ const getTimeline = async (investor_address: string) => {
     )
   );
 
+  console.log(res);
+
   return res.flatMap(chainRes =>
-    [...chainRes.investorPositions, ...chainRes.clmPositions].flatMap(position =>
+    [...chainRes.clmPositions, ...chainRes.beta_clmPositions].flatMap(position =>
       position.interactions.map(interaction => {
         const shareToken = position.vault.sharesToken;
         const token0 = position.vault.underlyingToken0;

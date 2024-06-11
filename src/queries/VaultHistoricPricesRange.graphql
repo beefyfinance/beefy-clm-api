@@ -1,5 +1,5 @@
 query VaultHistoricPricesRange($vault_address: ID!, $period: BigInt!) {
-  beefyCLVault(id: $vault_address) {
+  beta_clm(id: $vault_address) {
     minSnapshot: snapshots(
       first: 1
       orderBy: roundedTimestamp

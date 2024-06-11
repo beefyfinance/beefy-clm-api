@@ -1,3 +1,3 @@
 import { getBuiltGraphSDK } from '../../.graphclient';
 
-export const sdk = getBuiltGraphSDK();
+export const sdk = getBuiltGraphSDK({});

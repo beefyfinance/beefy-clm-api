@@ -1,5 +1,5 @@
 query VaultPrice($vault_address: ID!) {
-  beefyCLVault(id: $vault_address) {
+  beta_clm(id: $vault_address) {
     priceOfToken0InToken1
     priceRangeMin1
     priceRangeMax1

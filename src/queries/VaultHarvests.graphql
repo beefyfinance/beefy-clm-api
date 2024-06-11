@@ -1,12 +1,12 @@
 query VaultHarvests($vault_address: ID!) {
-  beefyCLVault(id: $vault_address) {
+  beta_clm(id: $vault_address) {
     underlyingToken0 {
       decimals
     }
     underlyingToken1 {
       decimals
     }
-    sharesToken {
+    sharesToken: managerToken {
       decimals
     }
     harvests(orderBy: timestamp, orderDirection: desc, first: 1000) {
@@ -16,7 +16,7 @@ query VaultHarvests($vault_address: ID!) {
       token0ToNativePrice
       token1ToNativePrice
       nativeToUSDPrice
-      totalSupply
+      totalSupply: managerTotalSupply
     }
   }
   clm(id: $vault_address) {
