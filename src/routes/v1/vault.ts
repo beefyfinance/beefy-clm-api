@@ -286,11 +286,13 @@ const getVaultHistoricPrices = async (
     return [];
   }
 
+  const token1 = vault.underlyingToken1;
+
   return vault.snapshots.map(snapshot => ({
     t: parseInt(snapshot.roundedTimestamp),
-    min: snapshot.priceRangeMin1,
-    v: snapshot.priceOfToken0InToken1,
-    max: snapshot.priceRangeMax1,
+    min: interpretAsDecimal(snapshot.priceRangeMin1, token1.decimals),
+    v: interpretAsDecimal(snapshot.priceOfToken0InToken1, token1.decimals),
+    max: interpretAsDecimal(snapshot.priceRangeMax1, token1.decimals),
   }));
 };
 

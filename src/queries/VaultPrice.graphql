@@ -1,10 +1,34 @@
+fragment Token on Token {
+  name
+  symbol
+  decimals
+}
+
 query VaultPrice($vault_address: ID!) {
   beta_clm(id: $vault_address) {
+    sharesToken: managerToken {
+      ...Token
+    }
+    underlyingToken0 {
+      ...Token
+    }
+    underlyingToken1 {
+      ...Token
+    }
     priceOfToken0InToken1
     priceRangeMin1
     priceRangeMax1
   }
   clm(id: $vault_address) {
+    sharesToken: managerToken {
+      ...Token
+    }
+    underlyingToken0 {
+      ...Token
+    }
+    underlyingToken1 {
+      ...Token
+    }
     priceOfToken0InToken1
     priceRangeMin1
     priceRangeMax1
