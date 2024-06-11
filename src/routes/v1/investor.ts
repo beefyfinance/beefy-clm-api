@@ -56,16 +56,20 @@ const getTimeline = async (investor_address: string) => {
           },
           { chainName: chain }
         )
+        .then(res => ({ chain, ...res }))
         .catch((e: unknown) => {
           // we have nothing to leak here
           throw new GraphQueryError(e);
         })
-        .then(res => ({ chain, ...res }))
     )
   );
 
-  return res.flatMap(chainRes =>
-    [...chainRes.clmPositions, ...chainRes.beta_clmPositions].flatMap(position =>
+  return res.flatMap(chainRes => {
+    const positions =
+      chainRes.chain === 'arbitrum'
+        ? [...chainRes.clmPositions, ...chainRes.beta_clmPositions]
+        : chainRes.clmPositions;
+    return positions.flatMap(position =>
       position.interactions.map(interaction => {
         const shareToken = position.vault.sharesToken;
         const token0 = position.vault.underlyingToken0;
@@ -119,6 +123,6 @@ const getTimeline = async (investor_address: string) => {
           usd_diff: usd_diff.toString(),
         };
       })
-    )
-  );
+    );
+  });
 };
