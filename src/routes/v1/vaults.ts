@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
 import { ChainId } from '../../config/chains';
 import { GraphQueryError } from '../../utils/error';
-import { sdk } from '../../utils/sdk';
+import { getSdkForChain } from '../../utils/sdk';
 import { chainSchema } from '../../schema/chain';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { VaultsQuery } from '../../../.graphclient';
@@ -104,8 +104,8 @@ const getVaults = async (chain: ChainId, period: Period) => {
   const now = new Date();
   const periodSeconds = getPeriodSeconds(period);
   const since = BigInt(Math.floor(now.getTime() / 1000) - periodSeconds);
-  const rawVaults = await sdk
-    .Vaults({ since: since.toString() }, { chainName: chain })
+  const rawVaults = await getSdkForChain(chain)
+    .Vaults({ since: since.toString() })
     .then(res => [...res.clms, ...res.beta_clms])
     .catch((e: unknown) => {
       throw new GraphQueryError(e);
@@ -158,16 +158,13 @@ const getVaultsHarvests = async (
   since: number,
   vaults: Address[]
 ): Promise<VaultsHarvests> => {
-  const options = { chainName: chain };
+  const sdk = getSdkForChain(chain);
   const queryPromise = vaults.length
-    ? sdk.VaultsHarvestsFiltered(
-        {
-          since: since.toString(),
-          vaults: vaults.map(v => v.toLowerCase()),
-        },
-        options
-      )
-    : sdk.VaultsHarvests({ since: since.toString() }, options);
+    ? sdk.VaultsHarvestsFiltered({
+        since: since.toString(),
+        vaults: vaults.map(v => v.toLowerCase()),
+      })
+    : sdk.VaultsHarvests({ since: since.toString() });
 
   const rawVaults = await queryPromise
     .then(res => [...res.clms, ...res.beta_clms])

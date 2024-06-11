@@ -3,7 +3,7 @@ import S from 'fluent-json-schema';
 import { allChainIds } from '../../config/chains';
 import { addressSchema } from '../../schema/address';
 import { GraphQueryError } from '../../utils/error';
-import { sdk } from '../../utils/sdk';
+import { getSdkForChain } from '../../utils/sdk';
 import { interpretAsDecimal } from '../../utils/decimal';
 
 export default async function (
@@ -49,13 +49,10 @@ export default async function (
 const getTimeline = async (investor_address: string) => {
   const res = await Promise.all(
     allChainIds.map(chain =>
-      sdk
-        .InvestorTimeline(
-          {
-            investor_address,
-          },
-          { chainName: chain }
-        )
+      getSdkForChain(chain)
+        .InvestorTimeline({
+          investor_address,
+        })
         .then(res => ({ chain, ...res }))
         .catch((e: unknown) => {
           // we have nothing to leak here
