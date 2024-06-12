@@ -173,7 +173,8 @@ export default async function (
 }
 
 const getVaultPrice = async (chain: ChainId, vault_address: string) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultPrice({
       vault_address,
     })
@@ -182,7 +183,7 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -195,7 +196,8 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
 };
 
 const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultHarvests({
       vault_address,
     })
@@ -204,7 +206,7 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -257,7 +259,8 @@ const getVaultHistoricPrices = async (
   period: Period,
   since: string
 ) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultHistoricPrices({
       vault_address,
       period: getPeriodSeconds(period),
@@ -268,7 +271,7 @@ const getVaultHistoricPrices = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -292,7 +295,8 @@ const getVaultHistoricPricesRange = async (
   vault_address: string,
   period: Period
 ) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultHistoricPricesRange({
       vault_address,
       period: getPeriodSeconds(period),
@@ -302,7 +306,7 @@ const getVaultHistoricPricesRange = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }

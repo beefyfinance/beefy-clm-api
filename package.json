@@ -11,6 +11,7 @@
     "build": "tsc",
     "start": "node build/src/index.js",
     "dev": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
+    "format": "prettier --write src/**/*.{ts,graphql}",
     "prettier:check": "prettier --check src/**/*.{ts,graphql}",
     "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
     "test": "npm run test:ts && npm run test:unit && npm run test:lint",

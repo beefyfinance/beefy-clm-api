@@ -104,9 +104,10 @@ const getVaults = async (chain: ChainId, period: Period) => {
   const now = new Date();
   const periodSeconds = getPeriodSeconds(period);
   const since = BigInt(Math.floor(now.getTime() / 1000) - periodSeconds);
-  const rawVaults = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const rawVaults = await sdk
     .Vaults({ since: since.toString() })
-    .then(res => [...res.clms, ...(chain === 'arbitrum' ? res.beta_clms : [])])
+    .then(res => [...res.clms, ...(res.beta_clms || [])])
     .catch((e: unknown) => {
       throw new GraphQueryError(e);
     });
@@ -158,7 +159,7 @@ const getVaultsHarvests = async (
   since: number,
   vaults: Address[]
 ): Promise<VaultsHarvests> => {
-  const sdk = getSdkForChain(chain);
+  const sdk = await getSdkForChain(chain);
   const queryPromise = vaults.length
     ? sdk.VaultsHarvestsFiltered({
         since: since.toString(),
@@ -167,7 +168,7 @@ const getVaultsHarvests = async (
     : sdk.VaultsHarvests({ since: since.toString() });
 
   const rawVaults = await queryPromise
-    .then(res => [...res.clms, ...(chain === 'arbitrum' ? res.beta_clms : [])])
+    .then(res => [...res.clms, ...(res.beta_clms || [])])
     .catch((e: unknown) => {
       throw new GraphQueryError(e);
     });

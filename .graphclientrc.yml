@@ -5,7 +5,7 @@ sources:
   - name: beefy-clm-beta
     handler:
       graphql:
-        endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefy-clm-arbitrum-beta/latest/gn
+        endpoint: https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefy-clm-{context.chainName:arbitrum}-beta/latest/gn
     transforms:
       - autoTypeMerging: true
       - autoPagination: 
@@ -33,7 +33,6 @@ sources:
                 type: Query
                 field: beta_clms
             
-
   - name: beefy-clm-prod
     handler:
       graphql:
@@ -44,5 +43,14 @@ sources:
           validateSchema: true
           limitOfRecords: 1000
 
+
 documents:
   - ./src/queries/*.graphql
+
+additionalTypeDefs: |
+  extend type CLM {
+    chain: String
+  }
+
+additionalResolvers:
+  - './src/queries/extensions/chain-resolvers'
