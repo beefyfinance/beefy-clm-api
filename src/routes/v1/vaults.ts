@@ -11,12 +11,15 @@ import { interpretAsDecimal } from '../../utils/decimal';
 import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 import { addressSchema } from '../../schema/address';
 import { Address } from 'viem';
+import { createLockingCache } from '../../utils/async-lock';
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
+  const lockingCache = createLockingCache();
+
   // vaults data for use by main api
   {
     type UrlParams = {
@@ -41,7 +44,11 @@ export default async function (
     instance.get<{ Params: UrlParams }>('/:chain/:period', { schema }, async (request, reply) => {
       const { chain, period } = request.params;
 
-      const result = await getVaults(chain, period);
+      const result = await lockingCache.wrap(
+        `vaults:${chain}:${period}`,
+        30 * 1000,
+        async () => await getVaults(chain, period)
+      );
       reply.send(result);
     });
   }
@@ -91,7 +98,12 @@ export default async function (
       async (request, reply) => {
         const { chain, since } = request.params;
         const vaults = request.query.vaults || [];
-        const result = await getVaultsHarvests(chain, since, vaults);
+        const result = await lockingCache.wrap(
+          `vaults-harvests:${chain}:${since}:${vaults.join(',')}`,
+          30 * 1000,
+          async () => await getVaultsHarvests(chain, since, vaults)
+        );
+
         reply.send(result);
       }
     );
@@ -104,9 +116,10 @@ const getVaults = async (chain: ChainId, period: Period) => {
   const now = new Date();
   const periodSeconds = getPeriodSeconds(period);
   const since = BigInt(Math.floor(now.getTime() / 1000) - periodSeconds);
-  const rawVaults = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const rawVaults = await sdk
     .Vaults({ since: since.toString() })
-    .then(res => [...res.clms, ...(chain === 'arbitrum' ? res.beta_clms : [])])
+    .then(res => [...res.clms, ...(res.beta_clms || [])])
     .catch((e: unknown) => {
       throw new GraphQueryError(e);
     });
@@ -158,7 +171,7 @@ const getVaultsHarvests = async (
   since: number,
   vaults: Address[]
 ): Promise<VaultsHarvests> => {
-  const sdk = getSdkForChain(chain);
+  const sdk = await getSdkForChain(chain);
   const queryPromise = vaults.length
     ? sdk.VaultsHarvestsFiltered({
         since: since.toString(),
@@ -167,7 +180,7 @@ const getVaultsHarvests = async (
     : sdk.VaultsHarvests({ since: since.toString() });
 
   const rawVaults = await queryPromise
-    .then(res => [...res.clms, ...(chain === 'arbitrum' ? res.beta_clms : [])])
+    .then(res => [...res.clms, ...(res.beta_clms || [])])
     .catch((e: unknown) => {
       throw new GraphQueryError(e);
     });

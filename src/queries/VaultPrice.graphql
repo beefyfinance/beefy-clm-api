@@ -6,6 +6,7 @@ fragment Token on Token {
 
 query VaultPrice($vault_address: ID!) {
   beta_clm(id: $vault_address) {
+    chain
     sharesToken: managerToken {
       ...Token
     }
@@ -20,6 +21,7 @@ query VaultPrice($vault_address: ID!) {
     priceRangeMax1
   }
   clm(id: $vault_address) {
+    chain
     sharesToken: managerToken {
       ...Token
     }

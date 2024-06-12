@@ -9,12 +9,15 @@ import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { HarvestDataFragment, Token } from '../../../.graphclient';
+import { createLockingCache } from '../../utils/async-lock';
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
+  const lockingCache = createLockingCache();
+
   // latest price
   {
     type UrlParams = {
@@ -41,7 +44,11 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
-        const result = await getVaultPrice(chain, vault_address);
+        const result = await lockingCache.wrap(
+          `vault-price:${chain}:${vault_address}`,
+          30 * 1000,
+          async () => await getVaultPrice(chain, vault_address)
+        );
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
@@ -78,7 +85,12 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
-        const result = await getVaultHarvests(chain, vault_address);
+        const result = await lockingCache.wrap(
+          `vault-harvests:${chain}:${vault_address}`,
+          30 * 1000,
+          async () => await getVaultHarvests(chain, vault_address)
+        );
+
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
@@ -119,7 +131,12 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period, since } = request.params;
-        const result = await getVaultHistoricPrices(chain, vault_address, period, since);
+        const result = await lockingCache.wrap(
+          `vault-historical-prices:${chain}:${vault_address}:${period}:${since}`,
+          30 * 1000,
+          async () => await getVaultHistoricPrices(chain, vault_address, period, since)
+        );
+
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
@@ -158,7 +175,11 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period } = request.params;
-        const result = await getVaultHistoricPricesRange(chain, vault_address, period);
+        const result = await lockingCache.wrap(
+          `vault-historical-prices-range:${chain}:${vault_address}:${period}`,
+          30 * 1000,
+          async () => await getVaultHistoricPricesRange(chain, vault_address, period)
+        );
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
@@ -173,7 +194,8 @@ export default async function (
 }
 
 const getVaultPrice = async (chain: ChainId, vault_address: string) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultPrice({
       vault_address,
     })
@@ -182,7 +204,7 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -195,7 +217,8 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
 };
 
 const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultHarvests({
       vault_address,
     })
@@ -204,7 +227,7 @@ const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -257,7 +280,8 @@ const getVaultHistoricPrices = async (
   period: Period,
   since: string
 ) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultHistoricPrices({
       vault_address,
       period: getPeriodSeconds(period),
@@ -268,7 +292,7 @@ const getVaultHistoricPrices = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }
@@ -292,7 +316,8 @@ const getVaultHistoricPricesRange = async (
   vault_address: string,
   period: Period
 ) => {
-  const res = await getSdkForChain(chain)
+  const sdk = await getSdkForChain(chain);
+  const res = await sdk
     .VaultHistoricPricesRange({
       vault_address,
       period: getPeriodSeconds(period),
@@ -302,7 +327,7 @@ const getVaultHistoricPricesRange = async (
       throw new GraphQueryError(e);
     });
 
-  const vault = res.clm || (chain === 'arbitrum' ? res.beta_clm : undefined);
+  const vault = res.clm || res.beta_clm;
   if (!vault) {
     return undefined;
   }

@@ -12,6 +12,7 @@ query VaultHistoricPrices(
   $skip: Int = 0
 ) {
   beta_clm(id: $vault_address) {
+    chain
     underlyingToken1 {
       ...Token
     }
@@ -29,6 +30,7 @@ query VaultHistoricPrices(
     }
   }
   clm(id: $vault_address) {
+    chain
     underlyingToken1 {
       ...Token
     }

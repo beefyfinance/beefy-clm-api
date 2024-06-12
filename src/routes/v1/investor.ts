@@ -5,12 +5,15 @@ import { addressSchema } from '../../schema/address';
 import { GraphQueryError } from '../../utils/error';
 import { getSdkForChain } from '../../utils/sdk';
 import { interpretAsDecimal } from '../../utils/decimal';
+import { createLockingCache } from '../../utils/async-lock';
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
+  const lockingCache = createLockingCache();
+
   // balances endpoint
   {
     type UrlParams = {
@@ -37,8 +40,14 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { investor_address } = request.params;
-        const result = await getTimeline(investor_address);
-        reply.send(result);
+        const res = await lockingCache.wrap(
+          `timeline:${investor_address}`,
+          2 * 60 * 1000,
+          async () => {
+            return await getTimeline(investor_address);
+          }
+        );
+        reply.send(res);
       }
     );
   }
@@ -47,26 +56,22 @@ export default async function (
 }
 
 const getTimeline = async (investor_address: string) => {
+  const sdks = await Promise.all(allChainIds.map(async chain => await getSdkForChain(chain)));
   const res = await Promise.all(
-    allChainIds.map(chain =>
-      getSdkForChain(chain)
+    sdks.map(async sdk =>
+      sdk
         .InvestorTimeline({
           investor_address,
         })
-        .then(res => ({ chain, ...res }))
+        .then(res => [...res.clmPositions, ...(res.beta_clmPositions || [])])
         .catch((e: unknown) => {
           // we have nothing to leak here
           throw new GraphQueryError(e);
         })
     )
   );
-
   return res.flatMap(chainRes => {
-    const positions =
-      chainRes.chain === 'arbitrum'
-        ? [...chainRes.clmPositions, ...chainRes.beta_clmPositions]
-        : chainRes.clmPositions;
-    return positions.flatMap(position =>
+    return chainRes.flatMap(position =>
       position.interactions.map(interaction => {
         const shareToken = position.vault.sharesToken;
         const token0 = position.vault.underlyingToken0;
@@ -102,9 +107,9 @@ const getTimeline = async (investor_address: string) => {
           .add(underlying1_diff.mul(token1_to_usd));
         return {
           datetime: new Date(parseInt(interaction.timestamp, 10) * 1000).toISOString(),
-          product_key: `beefy:vault:${chainRes.chain}:${position.vault.address}`,
+          product_key: `beefy:vault:${position.vault.chain}:${position.vault.address}`,
           display_name: position.vault.sharesToken.name,
-          chain: chainRes.chain,
+          chain: position.vault.chain,
           is_eol: false,
           is_dashboard_eol: false,
           transaction_hash: interaction.createdWith.hash,

@@ -6,6 +6,7 @@ fragment Token on Token {
 
 query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
   beta_clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    chain
     vaultAddress: id
     priceOfToken0InToken1
     priceRangeMin1
@@ -34,6 +35,7 @@ query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
     }
   }
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    chain
     vaultAddress: id
     priceOfToken0InToken1
     priceRangeMin1

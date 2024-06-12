@@ -16,6 +16,7 @@ query VaultsHarvestsFiltered(
 ) {
   beta_clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING, id_in: $vaults }) {
     vaultAddress: id
+    chain
     underlyingToken0 {
       decimals
     }
@@ -36,6 +37,7 @@ query VaultsHarvestsFiltered(
   }
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING, id_in: $vaults }) {
     vaultAddress: id
+    chain
     underlyingToken0 {
       decimals
     }

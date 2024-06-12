@@ -1,5 +1,6 @@
 query VaultHarvests($vault_address: ID!) {
   beta_clm(id: $vault_address) {
+    chain
     underlyingToken0 {
       decimals
     }
@@ -20,6 +21,7 @@ query VaultHarvests($vault_address: ID!) {
     }
   }
   clm(id: $vault_address) {
+    chain
     underlyingToken0 {
       decimals
     }

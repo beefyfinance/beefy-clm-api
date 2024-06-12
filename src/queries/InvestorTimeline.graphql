@@ -11,6 +11,7 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
     where: { investor: $investor_address, managerBalance_gt: 0 }
   ) {
     vault: clm {
+      chain
       address: id
       sharesToken: managerToken {
         ...Token
@@ -46,6 +47,7 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
   }
   clmPositions(skip: 0, first: 1000, where: { investor: $investor_address, managerBalance_gt: 0 }) {
     vault: clm {
+      chain
       address: id
       sharesToken: managerToken {
         ...Token
