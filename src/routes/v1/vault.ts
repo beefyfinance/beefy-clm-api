@@ -85,7 +85,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
-        const result = lockingCache.wrap(
+        const result = await lockingCache.wrap(
           `vault-harvests:${chain}:${vault_address}`,
           30 * 1000,
           async () => await getVaultHarvests(chain, vault_address)
@@ -131,7 +131,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period, since } = request.params;
-        const result = lockingCache.wrap(
+        const result = await lockingCache.wrap(
           `vault-historical-prices:${chain}:${vault_address}:${period}:${since}`,
           30 * 1000,
           async () => await getVaultHistoricPrices(chain, vault_address, period, since)
@@ -175,7 +175,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period } = request.params;
-        const result = lockingCache.wrap(
+        const result = await lockingCache.wrap(
           `vault-historical-prices-range:${chain}:${vault_address}:${period}`,
           30 * 1000,
           async () => await getVaultHistoricPricesRange(chain, vault_address, period)

@@ -44,7 +44,7 @@ export default async function (
     instance.get<{ Params: UrlParams }>('/:chain/:period', { schema }, async (request, reply) => {
       const { chain, period } = request.params;
 
-      const result = lockingCache.wrap(
+      const result = await lockingCache.wrap(
         `vaults:${chain}:${period}`,
         30 * 1000,
         async () => await getVaults(chain, period)
@@ -98,7 +98,7 @@ export default async function (
       async (request, reply) => {
         const { chain, since } = request.params;
         const vaults = request.query.vaults || [];
-        const result = lockingCache.wrap(
+        const result = await lockingCache.wrap(
           `vaults-harvests:${chain}:${since}:${vaults.join(',')}`,
           30 * 1000,
           async () => await getVaultsHarvests(chain, since, vaults)
