@@ -43,6 +43,10 @@ sources:
           validateSchema: true
           limitOfRecords: 1000
 
+plugins:
+  - httpCache:
+      matches:
+        - 'https://api.goldsky.com'
 
 documents:
   - ./src/queries/*.graphql

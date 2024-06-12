@@ -5,12 +5,15 @@ import { addressSchema } from '../../schema/address';
 import { GraphQueryError } from '../../utils/error';
 import { getSdkForChain } from '../../utils/sdk';
 import { interpretAsDecimal } from '../../utils/decimal';
+import { createLockingCache } from '../../utils/async-lock';
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
+  const lockingCache = createLockingCache();
+
   // balances endpoint
   {
     type UrlParams = {
@@ -37,8 +40,14 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { investor_address } = request.params;
-        const result = await getTimeline(investor_address);
-        reply.send(result);
+        const res = await lockingCache.wrap(
+          `timeline:${investor_address}`,
+          2 * 60 * 1000,
+          async () => {
+            return await getTimeline(investor_address);
+          }
+        );
+        reply.send(res);
       }
     );
   }

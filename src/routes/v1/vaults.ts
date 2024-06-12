@@ -11,12 +11,15 @@ import { interpretAsDecimal } from '../../utils/decimal';
 import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 import { addressSchema } from '../../schema/address';
 import { Address } from 'viem';
+import { createLockingCache } from '../../utils/async-lock';
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
+  const lockingCache = createLockingCache();
+
   // vaults data for use by main api
   {
     type UrlParams = {
@@ -41,7 +44,11 @@ export default async function (
     instance.get<{ Params: UrlParams }>('/:chain/:period', { schema }, async (request, reply) => {
       const { chain, period } = request.params;
 
-      const result = await getVaults(chain, period);
+      const result = lockingCache.wrap(
+        `vaults:${chain}:${period}`,
+        30 * 1000,
+        async () => await getVaults(chain, period)
+      );
       reply.send(result);
     });
   }
@@ -91,7 +98,12 @@ export default async function (
       async (request, reply) => {
         const { chain, since } = request.params;
         const vaults = request.query.vaults || [];
-        const result = await getVaultsHarvests(chain, since, vaults);
+        const result = lockingCache.wrap(
+          `vaults-harvests:${chain}:${since}:${vaults.join(',')}`,
+          30 * 1000,
+          async () => await getVaultsHarvests(chain, since, vaults)
+        );
+
         reply.send(result);
       }
     );

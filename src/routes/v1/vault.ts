@@ -9,12 +9,15 @@ import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { HarvestDataFragment, Token } from '../../../.graphclient';
+import { createLockingCache } from '../../utils/async-lock';
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
+  const lockingCache = createLockingCache();
+
   // latest price
   {
     type UrlParams = {
@@ -41,7 +44,11 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
-        const result = await getVaultPrice(chain, vault_address);
+        const result = await lockingCache.wrap(
+          `vault-price:${chain}:${vault_address}`,
+          30 * 1000,
+          async () => await getVaultPrice(chain, vault_address)
+        );
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
@@ -78,7 +85,12 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
-        const result = await getVaultHarvests(chain, vault_address);
+        const result = lockingCache.wrap(
+          `vault-harvests:${chain}:${vault_address}`,
+          30 * 1000,
+          async () => await getVaultHarvests(chain, vault_address)
+        );
+
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
@@ -119,7 +131,12 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period, since } = request.params;
-        const result = await getVaultHistoricPrices(chain, vault_address, period, since);
+        const result = lockingCache.wrap(
+          `vault-historical-prices:${chain}:${vault_address}:${period}:${since}`,
+          30 * 1000,
+          async () => await getVaultHistoricPrices(chain, vault_address, period, since)
+        );
+
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
@@ -158,7 +175,11 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period } = request.params;
-        const result = await getVaultHistoricPricesRange(chain, vault_address, period);
+        const result = lockingCache.wrap(
+          `vault-historical-prices-range:${chain}:${vault_address}:${period}`,
+          30 * 1000,
+          async () => await getVaultHistoricPricesRange(chain, vault_address, period)
+        );
         if (result === undefined) {
           reply.status(404);
           reply.send({ error: 'Vault not found' });
