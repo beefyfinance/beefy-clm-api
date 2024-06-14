@@ -9,6 +9,7 @@ import routes from './routes/index';
 import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env';
 import { FriendlyError } from './utils/error';
 import Decimal from 'decimal.js';
+import { allowedToBypassRateLimit } from './utils/auth';
 
 Decimal.set({
   // make sure we have enough precision
@@ -34,6 +35,7 @@ server.register(async (instance, _opts, done) => {
       continueExceeding: true,
       skipOnError: false,
       enableDraftSpec: true,
+      allowList: request => allowedToBypassRateLimit(request.headers['authorization']),
       errorResponseBuilder: (_request, context) => ({
         statusCode: 429,
         name: 'RateLimitExceededError',
