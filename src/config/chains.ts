@@ -27,6 +27,10 @@ export const chains = toChainMap([
     id: 'moonbeam',
     name: 'Moonbeam',
   },
+  {
+    id: 'linea',
+    name: 'Linea',
+  },
 ] as const satisfies ReadonlyArray<Chain>);
 
 export type Chains = typeof chains;
