@@ -1,7 +1,9 @@
 import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
+import { allChainIds } from '../../config/chains';
 import { addressSchema } from '../../schema/address';
-import { getAllSdks } from '../../utils/sdk';
+import { GraphQueryError } from '../../utils/error';
+import { getSdkForChain } from '../../utils/sdk';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { createLockingCache } from '../../utils/async-lock';
 
@@ -54,15 +56,22 @@ export default async function (
 }
 
 const getTimeline = async (investor_address: string) => {
+  const sdks = await Promise.all(allChainIds.map(async chain => await getSdkForChain(chain)));
   const res = await Promise.all(
-    getAllSdks().map(async sdk =>
-      sdk.InvestorTimeline({
-        investor_address,
-      })
+    sdks.map(async sdk =>
+      sdk
+        .InvestorTimeline({
+          investor_address,
+        })
+        .then(res => [...res.clmPositions, ...(res.beta_clmPositions || [])])
+        .catch((e: unknown) => {
+          // we have nothing to leak here
+          throw new GraphQueryError(e);
+        })
     )
   );
   return res.flatMap(chainRes => {
-    return chainRes.data.clmPositions.flatMap(position =>
+    return chainRes.flatMap(position =>
       position.interactions.map(interaction => {
         const shareToken = position.vault.sharesToken;
         const token0 = position.vault.underlyingToken0;
@@ -98,9 +107,9 @@ const getTimeline = async (investor_address: string) => {
           .add(underlying1_diff.mul(token1_to_usd));
         return {
           datetime: new Date(parseInt(interaction.timestamp, 10) * 1000).toISOString(),
-          product_key: `beefy:vault:${chainRes.chain}:${position.vault.address}`,
+          product_key: `beefy:vault:${position.vault.chain}:${position.vault.address}`,
           display_name: position.vault.sharesToken.name,
-          chain: chainRes.chain,
+          chain: position.vault.chain,
           is_eol: false,
           is_dashboard_eol: false,
           transaction_hash: interaction.createdWith.hash,
