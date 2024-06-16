@@ -1,17 +1,15 @@
 import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
 import { ChainId } from '../../config/chains';
-import { GraphQueryError } from '../../utils/error';
-import { getSdkForChain } from '../../utils/sdk';
+import { getSdksForChain } from '../../utils/sdk';
 import { chainSchema } from '../../schema/chain';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
-import { VaultsQuery } from '../../../.graphclient';
 import { calculateLastApr, prepareAprState } from '../../utils/apr';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 import { addressSchema } from '../../schema/address';
-import { Address } from 'viem';
 import { createLockingCache } from '../../utils/async-lock';
+import { VaultsQuery } from '../../queries/codegen/sdk';
 
 export default async function (
   instance: FastifyInstance,
@@ -61,7 +59,7 @@ export default async function (
     };
 
     type QueryParams = {
-      vaults?: Address[];
+      vaults?: string[];
     };
 
     const urlParamsSchema = S.object()
@@ -116,24 +114,22 @@ const getVaults = async (chain: ChainId, period: Period) => {
   const now = new Date();
   const periodSeconds = getPeriodSeconds(period);
   const since = BigInt(Math.floor(now.getTime() / 1000) - periodSeconds);
-  const sdk = await getSdkForChain(chain);
-  const rawVaults = await sdk
-    .Vaults({ since: since.toString() })
-    .then(res => [...res.clms, ...(res.beta_clms || [])])
-    .catch((e: unknown) => {
-      throw new GraphQueryError(e);
-    });
+  const res = await Promise.all(
+    getSdksForChain(chain).map(sdk => sdk.Vaults({ since: since.toString() }))
+  );
 
-  return rawVaults.map(vault => {
-    const token1 = vault.underlyingToken1;
-    return {
-      vaultAddress: vault.vaultAddress,
-      priceRangeMin1: interpretAsDecimal(vault.priceRangeMin1, token1.decimals),
-      priceOfToken0InToken1: interpretAsDecimal(vault.priceOfToken0InToken1, token1.decimals),
-      priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals),
-      ...getVaultApy(vault, periodSeconds, now),
-    };
-  });
+  return res.map(chainRes =>
+    chainRes.data.clms.map(vault => {
+      const token1 = vault.underlyingToken1;
+      return {
+        vaultAddress: vault.vaultAddress,
+        priceRangeMin1: interpretAsDecimal(vault.priceRangeMin1, token1.decimals),
+        priceOfToken0InToken1: interpretAsDecimal(vault.priceOfToken0InToken1, token1.decimals),
+        priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals),
+        ...getVaultApy(vault, periodSeconds, now),
+      };
+    })
+  );
 };
 
 const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: Date) => {
@@ -169,21 +165,17 @@ type VaultsHarvests = { vaultAddress: string; harvests: PreparedVaultHarvest[] }
 const getVaultsHarvests = async (
   chain: ChainId,
   since: number,
-  vaults: Address[]
+  vaults: string[]
 ): Promise<VaultsHarvests> => {
-  const sdk = await getSdkForChain(chain);
-  const queryPromise = vaults.length
-    ? sdk.VaultsHarvestsFiltered({
-        since: since.toString(),
-        vaults: vaults.map(v => v.toLowerCase()),
-      })
-    : sdk.VaultsHarvests({ since: since.toString() });
+  const res = await Promise.all(
+    getSdksForChain(chain).map(sdk =>
+      vaults.length
+        ? sdk.VaultsHarvestsFiltered({ since: since.toString(), vaults })
+        : sdk.VaultsHarvests({ since: since.toString() })
+    )
+  );
 
-  const rawVaults = await queryPromise
-    .then(res => [...res.clms, ...(res.beta_clms || [])])
-    .catch((e: unknown) => {
-      throw new GraphQueryError(e);
-    });
+  const rawVaults = res.flatMap(chainRes => chainRes.data.clms);
 
   return rawVaults.reduce((acc, vault): VaultsHarvests => {
     if (vault.harvests.length === 0) {
