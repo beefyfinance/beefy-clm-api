@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "lib": ["esnext"],
-    "module": "NodeNext",
+    "module": "commonjs",
     "target": "esnext",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
@@ -22,6 +22,7 @@
     "outDir": "build",
     "typeRoots": ["./node_modules/@types"]
   },
+  "include": ["./src/**/*"],
   "exclude": ["./node_modules"],
   "ts-node": {
     "compilerOptions": {

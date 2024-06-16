@@ -9,8 +9,8 @@
   "scripts": {
     "prepare": "husky",
     "build": "tsc",
-    "start": "node build/src/index.js",
-    "inspect": "node --inspect build/src/index.js",
+    "start": "node build/index.js",
+    "inspect": "node --inspect build/index.js",
     "dev": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
     "format": "prettier --write src/**/*.{ts,graphql}",
     "prettier:check": "prettier --check src/**/*.{ts,graphql}",
