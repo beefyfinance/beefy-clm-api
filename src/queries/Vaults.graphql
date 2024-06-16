@@ -5,7 +5,37 @@ fragment Token on Token {
 }
 
 query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
+  beta_clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    chain
+    vaultAddress: id
+    priceOfToken0InToken1
+    priceRangeMin1
+    priceRangeMax1
+    underlyingToken0 {
+      ...Token
+    }
+    underlyingToken1 {
+      ...Token
+    }
+    collectedFees: collections(
+      first: 1000
+      where: { timestamp_gte: $since }
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      timestamp
+      underlyingMainAmount0
+      underlyingMainAmount1
+      underlyingAltAmount0
+      underlyingAltAmount1
+      collectedAmount0
+      collectedAmount1
+      token0ToNativePrice
+      token1ToNativePrice
+    }
+  }
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    chain
     vaultAddress: id
     priceOfToken0InToken1
     priceRangeMin1

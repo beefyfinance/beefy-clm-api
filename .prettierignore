@@ -1,4 +1,3 @@
 /.husky
 /build
 /node_modules
-src/queries/codegen/sdk.ts

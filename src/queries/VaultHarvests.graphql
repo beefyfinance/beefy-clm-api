@@ -1,5 +1,27 @@
 query VaultHarvests($vault_address: ID!) {
+  beta_clm(id: $vault_address) {
+    chain
+    underlyingToken0 {
+      decimals
+    }
+    underlyingToken1 {
+      decimals
+    }
+    sharesToken: managerToken {
+      decimals
+    }
+    harvests(orderBy: timestamp, orderDirection: desc, first: 1000) {
+      timestamp
+      compoundedAmount0
+      compoundedAmount1
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+      totalSupply: managerTotalSupply
+    }
+  }
   clm(id: $vault_address) {
+    chain
     underlyingToken0 {
       decimals
     }

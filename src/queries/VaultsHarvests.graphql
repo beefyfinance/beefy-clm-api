@@ -9,7 +9,30 @@ fragment HarvestData on ClmHarvestEvent {
 }
 
 query VaultsHarvests($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
+  beta_clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    chain
+    vaultAddress: id
+    underlyingToken0 {
+      decimals
+    }
+    underlyingToken1 {
+      decimals
+    }
+    sharesToken: managerToken {
+      decimals
+    }
+    harvests(
+      orderBy: timestamp
+      orderDirection: desc
+      first: 1000
+      where: { timestamp_gte: $since }
+    ) {
+      ...HarvestData
+    }
+  }
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    chain
+
     vaultAddress: id
     underlyingToken0 {
       decimals
