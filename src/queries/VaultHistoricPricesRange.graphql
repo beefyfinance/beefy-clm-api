@@ -1,25 +1,5 @@
 query VaultHistoricPricesRange($vault_address: ID!, $period: BigInt!) {
-  beta_clm(id: $vault_address) {
-    chain
-    minSnapshot: snapshots(
-      first: 1
-      orderBy: roundedTimestamp
-      orderDirection: asc
-      where: { period: $period }
-    ) {
-      roundedTimestamp
-    }
-    maxSnapshot: snapshots(
-      first: 1
-      orderBy: roundedTimestamp
-      orderDirection: desc
-      where: { period: $period }
-    ) {
-      roundedTimestamp
-    }
-  }
   clm(id: $vault_address) {
-    chain
     minSnapshot: snapshots(
       first: 1
       orderBy: roundedTimestamp

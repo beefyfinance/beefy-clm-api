@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "lib": ["esnext"],
-    "module": "commonjs",
+    "module": "NodeNext",
     "target": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
@@ -22,7 +22,6 @@
     "outDir": "build",
     "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["./src/**/*", "./.graphclient/**/*", "./.graphclient"],
   "exclude": ["./node_modules"],
   "ts-node": {
     "compilerOptions": {
