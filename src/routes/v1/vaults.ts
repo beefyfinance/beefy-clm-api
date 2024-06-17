@@ -8,7 +8,7 @@ import { calculateLastApr, prepareAprState } from '../../utils/apr';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 import { addressSchema } from '../../schema/address';
-import { createLockingCache } from '../../utils/async-lock';
+import { getAsyncCache } from '../../utils/async-lock';
 import { VaultsQuery } from '../../queries/codegen/sdk';
 
 export default async function (
@@ -16,7 +16,7 @@ export default async function (
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
-  const lockingCache = createLockingCache();
+  const asyncCache = getAsyncCache();
 
   // vaults data for use by main api
   {
@@ -42,7 +42,7 @@ export default async function (
     instance.get<{ Params: UrlParams }>('/:chain/:period', { schema }, async (request, reply) => {
       const { chain, period } = request.params;
 
-      const result = await lockingCache.wrap(
+      const result = await asyncCache.wrap(
         `vaults:${chain}:${period}`,
         30 * 1000,
         async () => await getVaults(chain, period)
@@ -96,7 +96,7 @@ export default async function (
       async (request, reply) => {
         const { chain, since } = request.params;
         const vaults = request.query.vaults || [];
-        const result = await lockingCache.wrap(
+        const result = await asyncCache.wrap(
           `vaults-harvests:${chain}:${since}:${vaults.join(',')}`,
           30 * 1000,
           async () => await getVaultsHarvests(chain, since, vaults)

@@ -7,7 +7,7 @@ import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { interpretAsDecimal } from '../../utils/decimal';
-import { createLockingCache } from '../../utils/async-lock';
+import { getAsyncCache } from '../../utils/async-lock';
 import { HarvestDataFragment, Token } from '../../queries/codegen/sdk';
 
 export default async function (
@@ -15,7 +15,7 @@ export default async function (
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
-  const lockingCache = createLockingCache();
+  const asyncCache = getAsyncCache();
 
   // latest price
   {
@@ -43,7 +43,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
-        const result = await lockingCache.wrap(
+        const result = await asyncCache.wrap(
           `vault-price:${chain}:${vault_address}`,
           30 * 1000,
           async () => await getVaultPrice(chain, vault_address)
@@ -84,7 +84,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
-        const result = await lockingCache.wrap(
+        const result = await asyncCache.wrap(
           `vault-harvests:${chain}:${vault_address}`,
           30 * 1000,
           async () => await getVaultHarvests(chain, vault_address)
@@ -130,7 +130,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period, since } = request.params;
-        const result = await lockingCache.wrap(
+        const result = await asyncCache.wrap(
           `vault-historical-prices:${chain}:${vault_address}:${period}:${since}`,
           30 * 1000,
           async () => await getVaultHistoricPrices(chain, vault_address, period, since)
@@ -174,7 +174,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period } = request.params;
-        const result = await lockingCache.wrap(
+        const result = await asyncCache.wrap(
           `vault-historical-prices-range:${chain}:${vault_address}:${period}`,
           30 * 1000,
           async () => await getVaultHistoricPricesRange(chain, vault_address, period)

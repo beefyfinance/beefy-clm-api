@@ -4,16 +4,6 @@ import NodeCache from 'node-cache';
 
 const logger = getLoggerFor('cache');
 
-export function createLockingCache() {
-  const globalCache = new NodeCache({
-    stdTTL: 60 * 60, // 1 hour
-    checkperiod: 60 * 1, // 1 minutes
-    useClones: true,
-    deleteOnExpire: true,
-  });
-  return new AsyncCache({ store: globalCache });
-}
-
 export class AsyncCache {
   private asyncLock: AsyncLock;
 
@@ -78,4 +68,15 @@ export class AsyncCache {
       return value;
     });
   }
+}
+
+const globalCache = new NodeCache({
+  stdTTL: 60 * 60, // 1 hour
+  checkperiod: 60 * 1, // 1 minutes
+  useClones: true,
+  deleteOnExpire: true,
+});
+const cacheInstance = new AsyncCache({ store: globalCache });
+export function getAsyncCache() {
+  return cacheInstance;
 }
