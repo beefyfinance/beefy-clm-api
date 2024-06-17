@@ -31,6 +31,10 @@ export const chains = toChainMap([
     id: 'linea',
     name: 'Linea',
   },
+  {
+    id: 'polygon',
+    name: 'Polygon',
+  },
 ] as const satisfies ReadonlyArray<Chain>);
 
 export type Chains = typeof chains;
