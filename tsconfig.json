@@ -22,7 +22,7 @@
     "outDir": "build",
     "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["./src/**/*", "./.graphclient/**/*", "./.graphclient"],
+  "include": ["./src/**/*"],
   "exclude": ["./node_modules"],
   "ts-node": {
     "compilerOptions": {
