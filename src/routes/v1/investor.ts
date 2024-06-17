@@ -3,14 +3,14 @@ import S from 'fluent-json-schema';
 import { addressSchema } from '../../schema/address';
 import { getAllSdks } from '../../utils/sdk';
 import { interpretAsDecimal } from '../../utils/decimal';
-import { createLockingCache } from '../../utils/async-lock';
+import { getAsyncCache } from '../../utils/async-lock';
 
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
   done: (err?: Error) => void
 ) {
-  const lockingCache = createLockingCache();
+  const asyncCache = getAsyncCache();
 
   // balances endpoint
   {
@@ -38,7 +38,7 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { investor_address } = request.params;
-        const res = await lockingCache.wrap(
+        const res = await asyncCache.wrap(
           `timeline:${investor_address}`,
           2 * 60 * 1000,
           async () => {
