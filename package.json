@@ -35,7 +35,6 @@
     "@fastify/swagger-ui": "^3.0.0",
     "@fastify/under-pressure": "^8.3.0",
     "@types/lodash-es": "^4.17.12",
-    "abstract-cache": "^1.0.1",
     "async-lock": "^1.4.1",
     "decimal.js": "^10.4.3",
     "fastify": "^4.26.2",
@@ -44,6 +43,7 @@
     "graphql-request": "^6.1.0",
     "graphql-tag": "^2.12.6",
     "lodash": "^4.17.21",
+    "node-cache": "^5.1.2",
     "pino": "^8.19.0"
   },
   "lint-staged": {

@@ -1,23 +1,23 @@
-import { AbstractCacheCompliantObject } from '@fastify/caching';
 import AsyncLock from 'async-lock';
 import { getLoggerFor } from './log';
-// @ts-ignore
-const AbstractCache: any = require('abstract-cache'); // todo: add or install types
+import NodeCache from 'node-cache';
 
 const logger = getLoggerFor('cache');
 
 export function createLockingCache() {
-  const globalCache = AbstractCache({
-    useAwait: false,
+  const globalCache = new NodeCache({
+    stdTTL: 60 * 60, // 1 hour
+    checkperiod: 60 * 1, // 1 minutes
+    useClones: true,
+    deleteOnExpire: true,
   });
-
-  return new AsyncCache({ abCache: globalCache });
+  return new AsyncCache({ store: globalCache });
 }
 
 export class AsyncCache {
   private asyncLock: AsyncLock;
 
-  constructor(protected services: { abCache: AbstractCacheCompliantObject }) {
+  constructor(protected services: { store: NodeCache }) {
     this.asyncLock = new AsyncLock({
       // max amount of time an item can remain in the queue before acquiring the lock
       timeout: 10_000, // 10 seconds
@@ -30,27 +30,28 @@ export class AsyncCache {
     });
   }
 
-  async get<T>(key: string): Promise<T> {
+  async get<T>(key: string): Promise<T | null> {
     return new Promise((resolve, reject) => {
-      this.services.abCache.get(key, (err, value) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(value as T);
+      try {
+        const res = this.services.store.get(key);
+        if (res === undefined) {
+          return resolve(null);
         }
-      });
+        resolve(res as T);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   async set<T>(key: string, value: T, ttlMs: number): Promise<T> {
     return new Promise((resolve, reject) => {
-      this.services.abCache.set(key, value, ttlMs, (err, value) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(value as T);
-        }
-      });
+      try {
+        this.services.store.set(key, value, ttlMs / 1000);
+        resolve(value);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
