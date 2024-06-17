@@ -10,6 +10,7 @@ import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 import { addressSchema } from '../../schema/address';
 import { getAsyncCache } from '../../utils/async-lock';
 import { VaultsQuery } from '../../queries/codegen/sdk';
+import { sortedUniq } from 'lodash';
 
 export default async function (
   instance: FastifyInstance,
@@ -95,9 +96,11 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, since } = request.params;
+        const roundedSince = BigInt(since) / BigInt(60); // round to the minute
         const vaults = request.query.vaults || [];
+        const vaultsKey = sortedUniq(vaults).join(',').toLocaleLowerCase();
         const result = await asyncCache.wrap(
-          `vaults-harvests:${chain}:${since}:${vaults.join(',')}`,
+          `vaults-harvests:${chain}:${roundedSince}:${vaultsKey}`,
           30 * 1000,
           async () => await getVaultsHarvests(chain, since, vaults)
         );

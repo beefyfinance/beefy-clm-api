@@ -44,7 +44,7 @@ export default async function (
       async (request, reply) => {
         const { chain, vault_address } = request.params;
         const result = await asyncCache.wrap(
-          `vault-price:${chain}:${vault_address}`,
+          `vault-price:${chain}:${vault_address.toLocaleLowerCase()}`,
           30 * 1000,
           async () => await getVaultPrice(chain, vault_address)
         );
@@ -85,7 +85,7 @@ export default async function (
       async (request, reply) => {
         const { chain, vault_address } = request.params;
         const result = await asyncCache.wrap(
-          `vault-harvests:${chain}:${vault_address}`,
+          `vault-harvests:${chain}:${vault_address.toLocaleLowerCase()}`,
           30 * 1000,
           async () => await getVaultHarvests(chain, vault_address)
         );
@@ -130,8 +130,9 @@ export default async function (
       { schema },
       async (request, reply) => {
         const { chain, vault_address, period, since } = request.params;
+        const roundedSince = BigInt(since) / BigInt(60); // round to the minute
         const result = await asyncCache.wrap(
-          `vault-historical-prices:${chain}:${vault_address}:${period}:${since}`,
+          `vault-historical-prices:${chain}:${vault_address.toLocaleLowerCase()}:${period}:${roundedSince}`,
           30 * 1000,
           async () => await getVaultHistoricPrices(chain, vault_address, period, since)
         );
@@ -175,7 +176,7 @@ export default async function (
       async (request, reply) => {
         const { chain, vault_address, period } = request.params;
         const result = await asyncCache.wrap(
-          `vault-historical-prices-range:${chain}:${vault_address}:${period}`,
+          `vault-historical-prices-range:${chain}:${vault_address.toLocaleLowerCase()}:${period}`,
           30 * 1000,
           async () => await getVaultHistoricPricesRange(chain, vault_address, period)
         );
