@@ -2,14 +2,13 @@ import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
 import { ChainId } from '../../config/chains';
 import { addressSchema } from '../../schema/address';
-import { GraphQueryError } from '../../utils/error';
-import { getSdkForChain } from '../../utils/sdk';
+import { getSdksForChain } from '../../utils/sdk';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
 import { interpretAsDecimal } from '../../utils/decimal';
-import { HarvestDataFragment, Token } from '../../../.graphclient';
 import { createLockingCache } from '../../utils/async-lock';
+import { HarvestDataFragment, Token } from '../../queries/codegen/sdk';
 
 export default async function (
   instance: FastifyInstance,
@@ -194,17 +193,15 @@ export default async function (
 }
 
 const getVaultPrice = async (chain: ChainId, vault_address: string) => {
-  const sdk = await getSdkForChain(chain);
-  const res = await sdk
-    .VaultPrice({
-      vault_address,
-    })
-    .catch((e: unknown) => {
-      // we have nothing to leak here
-      throw new GraphQueryError(e);
-    });
+  const res = await Promise.all(
+    getSdksForChain(chain).map(async sdk =>
+      sdk.VaultPrice({
+        vault_address,
+      })
+    )
+  );
 
-  const vault = res.clm || res.beta_clm;
+  const vault = res.map(r => r.data.clm).find(v => !!v);
   if (!vault) {
     return undefined;
   }
@@ -217,17 +214,15 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
 };
 
 const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
-  const sdk = await getSdkForChain(chain);
-  const res = await sdk
-    .VaultHarvests({
-      vault_address,
-    })
-    .catch((e: unknown) => {
-      // we have nothing to leak here
-      throw new GraphQueryError(e);
-    });
+  const res = await Promise.all(
+    getSdksForChain(chain).map(async sdk =>
+      sdk.VaultHarvests({
+        vault_address,
+      })
+    )
+  );
 
-  const vault = res.clm || res.beta_clm;
+  const vault = res.map(r => r.data.clm).find(v => !!v);
   if (!vault) {
     return undefined;
   }
@@ -280,19 +275,17 @@ const getVaultHistoricPrices = async (
   period: Period,
   since: string
 ) => {
-  const sdk = await getSdkForChain(chain);
-  const res = await sdk
-    .VaultHistoricPrices({
-      vault_address,
-      period: getPeriodSeconds(period),
-      since,
-    })
-    .catch((e: unknown) => {
-      // we have nothing to leak here
-      throw new GraphQueryError(e);
-    });
+  const res = await Promise.all(
+    getSdksForChain(chain).map(async sdk =>
+      sdk.VaultHistoricPrices({
+        vault_address,
+        period: getPeriodSeconds(period),
+        since,
+      })
+    )
+  );
 
-  const vault = res.clm || res.beta_clm;
+  const vault = res.map(r => r.data.clm).find(v => !!v);
   if (!vault) {
     return undefined;
   }
@@ -316,18 +309,16 @@ const getVaultHistoricPricesRange = async (
   vault_address: string,
   period: Period
 ) => {
-  const sdk = await getSdkForChain(chain);
-  const res = await sdk
-    .VaultHistoricPricesRange({
-      vault_address,
-      period: getPeriodSeconds(period),
-    })
-    .catch((e: unknown) => {
-      // we have nothing to leak here
-      throw new GraphQueryError(e);
-    });
+  const res = await Promise.all(
+    getSdksForChain(chain).map(async sdk =>
+      sdk.VaultHistoricPricesRange({
+        vault_address,
+        period: getPeriodSeconds(period),
+      })
+    )
+  );
 
-  const vault = res.clm || res.beta_clm;
+  const vault = res.map(r => r.data.clm).find(v => !!v);
   if (!vault) {
     return undefined;
   }
