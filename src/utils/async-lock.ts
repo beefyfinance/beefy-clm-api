@@ -53,10 +53,11 @@ export class AsyncCache {
       logger.trace({ msg: 'wrap: lock acquired', data: { key, ttlMs } });
 
       logger.debug({ msg: 'wrap: getting cached value', data: { key, ttlMs } });
-      const cached = await this.get<{ item: T; stored: number; ttl: number }>(key);
+      const cached = await this.get<T>(key);
       if (cached) {
         logger.trace({ msg: 'wrap: cache hit', data: { key, ttlMs } });
-        return cached.item;
+        console.log({ cached });
+        return cached;
       }
       logger.trace({ msg: 'wrap: cache miss, fetching value', data: { key, ttlMs } });
       const value = await fn();

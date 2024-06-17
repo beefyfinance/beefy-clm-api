@@ -121,7 +121,7 @@ const getVaults = async (chain: ChainId, period: Period) => {
     getSdksForChain(chain).map(sdk => sdk.Vaults({ since: since.toString() }))
   );
 
-  return res.map(chainRes =>
+  return res.flatMap(chainRes =>
     chainRes.data.clms.map(vault => {
       const token1 = vault.underlyingToken1;
       return {
