@@ -200,11 +200,22 @@ export default async function (
       .prop('chain', chainSchema.required().description('The chain the vault is on'))
       .prop('vault_address', addressSchema.required().description('The vault contract address'));
 
-    const responseSchema = S.array().items(S.object());
+    const responseSchema = S.array().items(
+      S.object()
+        .prop('investor_address', addressSchema.required().description('The investor address'))
+        .prop('total_shares_balance', S.string().required().description('The total shares balance'))
+        .prop('underlying_balance0', S.string().required().description('The underlying balance 0'))
+        .prop('underlying_balance1', S.string().required().description('The underlying balance 1'))
+        .prop('usd_balance0', S.string().required().description('The USD balance 0'))
+        .prop('usd_balance1', S.string().required().description('The USD balance 1'))
+        .prop('usd_balance', S.string().required().description('The USD balance'))
+    );
 
     const schema: FastifySchema = {
       tags: ['vault'],
       params: urlParamsSchema,
+      summary: 'Get all investor positions for a vault',
+      description: 'Get all investor positions for a vault',
       response: {
         200: responseSchema,
       },
