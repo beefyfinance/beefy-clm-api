@@ -64,13 +64,21 @@ const getTimeline = async (investor_address: string) => {
   return res.flatMap(chainRes => {
     return chainRes.data.clmPositions.flatMap(position =>
       position.interactions.map(interaction => {
-        const shareToken = position.vault.sharesToken;
-        const token0 = position.vault.underlyingToken0;
-        const token1 = position.vault.underlyingToken1;
+        const managerToken = position.clm.managerToken;
+        const token0 = position.clm.underlyingToken0;
+        const token1 = position.clm.underlyingToken1;
         const interactionToken0ToNative = interpretAsDecimal(interaction.token0ToNativePrice, 18);
         const interactionToken1ToNative = interpretAsDecimal(interaction.token1ToNativePrice, 18);
         const interactionNativeToUsd = interpretAsDecimal(interaction.nativeToUSDPrice, 18);
-        const share_balance = interpretAsDecimal(interaction.sharesBalance, shareToken.decimals);
+        const manager_balance = interpretAsDecimal(
+          interaction.managerBalance,
+          managerToken.decimals
+        );
+        const reward_pool_balance = interpretAsDecimal(
+          interaction.rewardPoolBalance,
+          managerToken.decimals
+        );
+        const share_balance = manager_balance.add(reward_pool_balance);
         const underlyingBalance0 = interpretAsDecimal(
           interaction.underlyingBalance0,
           token0.decimals
@@ -84,7 +92,17 @@ const getTimeline = async (investor_address: string) => {
         const usd_balance = underlyingBalance0
           .mul(token0_to_usd)
           .add(underlyingBalance1.mul(token1_to_usd));
-        const share_diff = interpretAsDecimal(interaction.sharesBalanceDelta, shareToken.decimals);
+
+        const manager_diff = interpretAsDecimal(
+          interaction.managerBalanceDelta,
+          managerToken.decimals
+        );
+        const reward_pool_diff = interpretAsDecimal(
+          interaction.rewardPoolBalanceDelta,
+          managerToken.decimals
+        );
+        const share_diff = manager_diff.add(reward_pool_diff);
+
         const underlying0_diff = interpretAsDecimal(
           interaction.underlyingBalance0Delta,
           token0.decimals
@@ -98,8 +116,9 @@ const getTimeline = async (investor_address: string) => {
           .add(underlying1_diff.mul(token1_to_usd));
         return {
           datetime: new Date(parseInt(interaction.timestamp, 10) * 1000).toISOString(),
-          product_key: `beefy:vault:${chainRes.chain}:${position.vault.address}`,
-          display_name: position.vault.sharesToken.name,
+          product_key: `beefy:vault:${chainRes.chain}:${position.clm.address}`,
+          display_name: position.clm.managerToken.name,
+          interaction_type: interaction.type,
           chain: chainRes.chain,
           is_eol: false,
           is_dashboard_eol: false,
@@ -107,10 +126,14 @@ const getTimeline = async (investor_address: string) => {
           token0_to_usd: token0_to_usd.toString(),
           token1_to_usd: token1_to_usd.toString(),
           share_balance: share_balance.toString(),
+          manager_balance: manager_balance.toString(),
+          reward_pool_balance: reward_pool_balance.toString(),
           underlying0_balance: underlyingBalance0.toString(),
           underlying1_balance: underlyingBalance1.toString(),
           usd_balance: usd_balance.toString(),
           share_diff: share_diff.toString(),
+          manager_diff: manager_diff.toString(),
+          reward_pool_diff: reward_pool_diff.toString(),
           underlying0_diff: underlying0_diff.toString(),
           underlying1_diff: underlying1_diff.toString(),
           usd_diff: usd_diff.toString(),

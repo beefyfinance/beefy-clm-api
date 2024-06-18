@@ -6,9 +6,15 @@ fragment Token on Token {
 
 query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
   clmPositions(skip: 0, first: 1000, where: { investor: $investor_address, managerBalance_gt: 0 }) {
-    vault: clm {
+    clm {
       address: id
-      sharesToken: managerToken {
+      managerToken {
+        ...Token
+      }
+      rewardPoolToken {
+        ...Token
+      }
+      rewardToken {
         ...Token
       }
       underlyingToken0 {
@@ -17,26 +23,32 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
       underlyingToken1 {
         ...Token
       }
-      totalSupply: managerTotalSupply
+      managerTotalSupply
+      rewardPoolTotalSupply
       token0ToNativePrice
       token1ToNativePrice
+      rewardToNativePrice
       nativeToUSDPrice
     }
-    sharesBalance: managerBalance
+    managerBalance
     interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
       timestamp
       blockNumber
       createdWith {
         hash: id
       }
-      sharesBalance: managerBalance
+      type
+      managerBalance
+      rewardPoolBalance
       underlyingBalance0
       underlyingBalance1
-      sharesBalanceDelta: managerBalanceDelta
+      managerBalanceDelta
+      rewardPoolBalanceDelta
       underlyingBalance0Delta
       underlyingBalance1Delta
       token0ToNativePrice
       token1ToNativePrice
+      rewardToNativePrice
       nativeToUSDPrice
     }
   }
