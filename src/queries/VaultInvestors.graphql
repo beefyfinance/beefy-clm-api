@@ -1,0 +1,47 @@
+fragment Token on Token {
+  name
+  symbol
+  decimals
+}
+
+query VaultInvestors($clmAddress: String!, $first: Int! = 1000, $skip: Int! = 0) {
+  clmPositions(
+    first: $first
+    skip: $skip
+    orderBy: id
+    orderDirection: asc
+    where: { totalBalance_gt: 0, clm: $clmAddress }
+  ) {
+    clm {
+      vaultAddress: id
+      managerToken {
+        ...Token
+      }
+      underlyingToken0 {
+        ...Token
+      }
+      underlyingToken1 {
+        ...Token
+      }
+      rewardPoolToken {
+        ...Token
+      }
+      managerTotalSupply
+
+      token0ToNativePrice
+      token1ToNativePrice
+      nativeToUSDPrice
+
+      underlyingAltAmount0
+      underlyingAltAmount1
+      underlyingMainAmount0
+      underlyingMainAmount1
+    }
+    investor {
+      userAddress: id
+    }
+    managerBalance
+    rewardPoolBalance
+    totalBalance
+  }
+}

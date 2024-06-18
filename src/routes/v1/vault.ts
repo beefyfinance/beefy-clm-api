@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
 import { ChainId } from '../../config/chains';
 import { addressSchema } from '../../schema/address';
-import { getSdksForChain } from '../../utils/sdk';
+import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
@@ -31,7 +31,7 @@ export default async function (
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
-      tags: ['v1'],
+      tags: ['vault'],
       params: urlParamsSchema,
       response: {
         200: responseSchema,
@@ -72,7 +72,7 @@ export default async function (
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
-      tags: ['v1'],
+      tags: ['vault'],
       params: urlParamsSchema,
       response: {
         200: responseSchema,
@@ -118,7 +118,7 @@ export default async function (
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
-      tags: ['v1'],
+      tags: ['vault'],
       params: urlParamsSchema,
       response: {
         200: responseSchema,
@@ -163,7 +163,7 @@ export default async function (
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
-      tags: ['v1'],
+      tags: ['vault'],
       params: urlParamsSchema,
       response: {
         200: responseSchema,
@@ -185,6 +185,52 @@ export default async function (
           reply.send({ error: 'Vault not found' });
           return;
         }
+        reply.send(result);
+      }
+    );
+  }
+
+  {
+    type UrlParams = {
+      chain: ChainId;
+      vault_address: string;
+    };
+
+    const urlParamsSchema = S.object()
+      .prop('chain', chainSchema.required().description('The chain the vault is on'))
+      .prop('vault_address', addressSchema.required().description('The vault contract address'));
+
+    const responseSchema = S.array().items(
+      S.object()
+        .prop('investor_address', addressSchema.required().description('The investor address'))
+        .prop('total_shares_balance', S.string().required().description('The total shares balance'))
+        .prop('underlying_balance0', S.string().required().description('The underlying balance 0'))
+        .prop('underlying_balance1', S.string().required().description('The underlying balance 1'))
+        .prop('usd_balance0', S.string().required().description('The USD balance 0'))
+        .prop('usd_balance1', S.string().required().description('The USD balance 1'))
+        .prop('usd_balance', S.string().required().description('The USD balance'))
+    );
+
+    const schema: FastifySchema = {
+      tags: ['vault'],
+      params: urlParamsSchema,
+      summary: 'Get all investor positions for a vault',
+      description: 'Get all investor positions for a vault',
+      response: {
+        200: responseSchema,
+      },
+    };
+
+    instance.get<{ Params: UrlParams }>(
+      '/:chain/:vault_address/investors',
+      { schema },
+      async (request, reply) => {
+        const { chain, vault_address } = request.params;
+        const result = await asyncCache.wrap(
+          `vault-investors:${chain}:${vault_address.toLocaleLowerCase()}`,
+          30 * 1000,
+          async () => await getVaultInvestors(chain, vault_address)
+        );
         reply.send(result);
       }
     );
@@ -328,4 +374,64 @@ const getVaultHistoricPricesRange = async (
     min: parseInt(vault.minSnapshot?.[0]?.roundedTimestamp || 0),
     max: parseInt(vault.maxSnapshot?.[0]?.roundedTimestamp || 0),
   };
+};
+
+const getVaultInvestors = async (chain: ChainId, vault_address: string) => {
+  const res = await Promise.all(
+    getSdksForChain(chain).map(async sdk =>
+      paginateSdkCalls(
+        sdk,
+        (sdk, skip, first) =>
+          sdk.VaultInvestors({
+            clmAddress: vault_address,
+            skip,
+            first,
+          }),
+        res => res.data.clmPositions.length,
+        { pageSize: 1000, fetchAtMost: 100_000 }
+      )
+    )
+  );
+
+  const positions = res.flatMap(chainRes =>
+    chainRes.flatMap(chainPage => chainPage.data.clmPositions)
+  );
+
+  return positions.map(position => {
+    const managerToken = position.clm.managerToken;
+    const token0 = position.clm.underlyingToken0;
+    const token1 = position.clm.underlyingToken1;
+    const token0ToNativePrice = interpretAsDecimal(position.clm.token0ToNativePrice, 18);
+    const token1ToNativePrice = interpretAsDecimal(position.clm.token1ToNativePrice, 18);
+    const nativeToUsd = interpretAsDecimal(position.clm.nativeToUSDPrice, 18);
+    const positionShareBalance = interpretAsDecimal(position.totalBalance, managerToken.decimals);
+    const vaultBalance0 = interpretAsDecimal(
+      position.clm.underlyingAltAmount0,
+      token0.decimals
+    ).plus(interpretAsDecimal(position.clm.underlyingMainAmount0, token0.decimals));
+    const vaultBalance1 = interpretAsDecimal(
+      position.clm.underlyingAltAmount1,
+      token1.decimals
+    ).plus(interpretAsDecimal(position.clm.underlyingMainAmount1, token1.decimals));
+    const vaultTotalSupply = interpretAsDecimal(
+      position.clm.managerTotalSupply,
+      managerToken.decimals
+    );
+
+    const positionPercentShare = positionShareBalance.div(vaultTotalSupply);
+    const positionBalance0 = vaultBalance0.mul(positionPercentShare);
+    const positionBalance1 = vaultBalance1.mul(positionPercentShare);
+    const positionBalance0Usd = positionBalance0.mul(token0ToNativePrice).mul(nativeToUsd);
+    const positionBalance1Usd = positionBalance1.mul(token1ToNativePrice).mul(nativeToUsd);
+    const positionBalanceUsd = positionBalance0Usd.add(positionBalance1Usd);
+    return {
+      investor_address: position.investor.userAddress,
+      total_shares_balance: positionShareBalance.toFixed(10),
+      underlying_balance0: positionBalance0.toFixed(10),
+      underlying_balance1: positionBalance1.toFixed(10),
+      usd_balance0: positionBalance0Usd.toFixed(10),
+      usd_balance1: positionBalance1Usd.toFixed(10),
+      usd_balance: positionBalanceUsd.toFixed(10),
+    };
+  });
 };

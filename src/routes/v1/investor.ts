@@ -26,7 +26,7 @@ export default async function (
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
-      tags: ['v1'],
+      tags: ['investor'],
       params: urlParamsSchema,
       response: {
         200: responseSchema,

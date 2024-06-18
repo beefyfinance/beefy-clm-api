@@ -33,7 +33,7 @@ export default async function (
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
-      tags: ['v1'],
+      tags: ['vaults'],
       params: urlParamsSchema,
       response: {
         200: responseSchema,
@@ -83,7 +83,7 @@ export default async function (
     const responseSchema = S.array().items(S.object());
 
     const schema: FastifySchema = {
-      tags: ['v1'],
+      tags: ['vaults'],
       params: urlParamsSchema,
       querystring: queryParamsSchema,
       response: {
