@@ -135,7 +135,7 @@ const getVaults = async (chain: ChainId, period: Period) => {
   );
 
   return res.flatMap(chainRes =>
-    chainRes.map(chainPage =>
+    chainRes.flatMap(chainPage =>
       chainPage.data.clms.map(vault => {
         const token1 = vault.underlyingToken1;
         return {
