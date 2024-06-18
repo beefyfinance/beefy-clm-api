@@ -82,7 +82,7 @@ export function calculateLastApr(
 
     const rewardRate = sliceCollected.div(sliceTvl).div(sliceDuration);
     const apr = rewardRate.times(ONE_YEAR);
-    const apy = aprToApy(apr, 1);
+    const apy = aprToApy(apr, ONE_YEAR / periodMs);
     return { apr, apy };
   }
 

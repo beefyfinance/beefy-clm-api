@@ -88,9 +88,10 @@ describe('Apr', () => {
       },
     ];
 
-    const apr = calculateLastApr(aprState, 86400 * 1000, new Date('2024-06-18T07:26:11.773Z'));
+    const res = calculateLastApr(aprState, 86400 * 1000, new Date('2024-06-18T07:26:11.773Z'));
 
-    expect(apr.apr.toNumber()).toBeCloseTo(0.45586, 3);
+    expect(res.apr.toNumber()).toBeCloseTo(0.45586, 3);
+    expect(res.apy.toNumber()).toBeCloseTo(0.57709, 3);
   });
 
   test('should compute apr in the simplest case', () => {
