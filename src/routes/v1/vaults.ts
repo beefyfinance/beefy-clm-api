@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
 import { ChainId } from '../../config/chains';
-import { getSdksForChain } from '../../utils/sdk';
+import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
 import { chainSchema } from '../../schema/chain';
 import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
 import { calculateLastApr, prepareAprState } from '../../utils/apr';
@@ -10,7 +10,7 @@ import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 import { addressSchema } from '../../schema/address';
 import { getAsyncCache } from '../../utils/async-lock';
 import { VaultsQuery } from '../../queries/codegen/sdk';
-import { uniq } from 'lodash';
+import { max, uniq } from 'lodash';
 
 export default async function (
   instance: FastifyInstance,
@@ -117,21 +117,36 @@ const getVaults = async (chain: ChainId, period: Period) => {
   const now = new Date();
   const periodSeconds = getPeriodSeconds(period);
   const since = BigInt(Math.floor(now.getTime() / 1000) - periodSeconds);
+
   const res = await Promise.all(
-    getSdksForChain(chain).map(sdk => sdk.Vaults({ since: since.toString() }))
+    getSdksForChain(chain).map(sdk =>
+      paginateSdkCalls(
+        sdk,
+        (sdk, skip, first) =>
+          sdk.Vaults({
+            since: since.toString(),
+            skip,
+            first,
+          }),
+        res => max(res.data.clms.map(vault => vault.collectedFees.length)) || 0,
+        { pageSize: 1000, fetchAtMost: 100_000 }
+      )
+    )
   );
 
   return res.flatMap(chainRes =>
-    chainRes.data.clms.map(vault => {
-      const token1 = vault.underlyingToken1;
-      return {
-        vaultAddress: vault.vaultAddress,
-        priceRangeMin1: interpretAsDecimal(vault.priceRangeMin1, token1.decimals),
-        priceOfToken0InToken1: interpretAsDecimal(vault.priceOfToken0InToken1, token1.decimals),
-        priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals),
-        ...getVaultApy(vault, periodSeconds, now),
-      };
-    })
+    chainRes.map(chainPage =>
+      chainPage.data.clms.map(vault => {
+        const token1 = vault.underlyingToken1;
+        return {
+          vaultAddress: vault.vaultAddress,
+          priceRangeMin1: interpretAsDecimal(vault.priceRangeMin1, token1.decimals),
+          priceOfToken0InToken1: interpretAsDecimal(vault.priceOfToken0InToken1, token1.decimals),
+          priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals),
+          ...getVaultApy(vault, periodSeconds, now),
+        };
+      })
+    )
   );
 };
 

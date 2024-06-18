@@ -56,7 +56,6 @@ export class AsyncCache {
       const cached = await this.get<T>(key);
       if (cached) {
         logger.trace({ msg: 'wrap: cache hit', data: { key, ttlMs } });
-        console.log({ cached });
         return cached;
       }
       logger.trace({ msg: 'wrap: cache miss, fetching value', data: { key, ttlMs } });

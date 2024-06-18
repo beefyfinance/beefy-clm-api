@@ -62,9 +62,28 @@ export function calculateLastApr(
   // first, eliminate the entries that are not in the period anymore
   state = evictOldAprEntries(state, periodMs, now);
 
-  // special cases for 1 or 2 entries after eviction
-  if (state.length <= 1) {
+  // special cases for 0 or 1 entries after eviction
+  if (state.length === 0) {
     return { apr: ZERO_BD, apy: ZERO_BD };
+  }
+
+  if (state.length === 1) {
+    const entry = state[0];
+    const sliceDuration = new Decimal(now.getTime() - entry.collectTimestamp.getTime());
+    const sliceCollected = entry.collectedAmount;
+    const sliceTvl = entry.totalValueLocked;
+
+    if (sliceTvl.isZero()) {
+      return { apr: ZERO_BD, apy: ZERO_BD };
+    }
+    if (sliceDuration.isZero()) {
+      return { apr: ZERO_BD, apy: ZERO_BD };
+    }
+
+    const rewardRate = sliceCollected.div(sliceTvl).div(sliceDuration);
+    const apr = rewardRate.times(ONE_YEAR);
+    const apy = aprToApy(apr, 1);
+    return { apr, apy };
   }
 
   // for each time slice, we get the APR and duration for it
@@ -89,7 +108,7 @@ export function calculateLastApr(
     const sliceTvl = prev.totalValueLocked;
 
     // if the slice has no TVL, we skip it since it doesn't contribute to the APR
-    if (!sliceTvl.isZero()) {
+    if (!sliceTvl.isZero() && !sliceDuration.isZero()) {
       // we compute the reward rate for the slice per unit of tvl
       const rewardRate = sliceCollected.div(sliceTvl).div(sliceDuration);
 
