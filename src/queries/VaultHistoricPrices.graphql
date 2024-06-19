@@ -20,7 +20,8 @@ query VaultHistoricPrices(
       skip: $skip
       orderBy: roundedTimestamp
       orderDirection: asc
-      where: { roundedTimestamp_gte: $since, period: $period }
+      # TODO remove managerTotalSupply_gt once reindexed to not save snapshots when total supply is 0
+      where: { roundedTimestamp_gte: $since, period: $period, managerTotalSupply_gt: 0 }
     ) {
       roundedTimestamp
       priceRangeMin1
