@@ -1,43 +1,62 @@
-fragment Token on Token {
-  name
-  symbol
+fragment InvestorTimelineToken on Token {
+  address: id
   decimals
+  name
+}
+
+fragment InvestorTimelineClmPosition on CLM {
+  address: id
+  managerToken {
+    ...InvestorTimelineToken
+  }
+  rewardPoolToken {
+    ...InvestorTimelineToken
+  }
+  underlyingToken0 {
+    ...InvestorTimelineToken
+  }
+  underlyingToken1 {
+    ...InvestorTimelineToken
+  }
+  managerTotalSupply
+  rewardPoolTotalSupply
+  token0ToNativePrice
+  token1ToNativePrice
+  nativeToUSDPrice
+}
+
+fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
+  id
+  timestamp
+  blockNumber
+  createdWith {
+    hash: id
+  }
+  totalBalance
+  managerBalance
+  managerBalanceDelta
+  rewardPoolBalance
+  rewardPoolBalanceDelta
+  underlyingBalance0
+  underlyingBalance0Delta
+  underlyingBalance1
+  underlyingBalance1Delta
+  token0ToNativePrice
+  token1ToNativePrice
+  nativeToUSDPrice
+  type
 }
 
 query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
-  clmPositions(skip: 0, first: 1000, where: { investor: $investor_address, managerBalance_gt: 0 }) {
-    vault: clm {
-      address: id
-      sharesToken: managerToken {
-        ...Token
-      }
-      underlyingToken0 {
-        ...Token
-      }
-      underlyingToken1 {
-        ...Token
-      }
-      totalSupply: managerTotalSupply
-      token0ToNativePrice
-      token1ToNativePrice
-      nativeToUSDPrice
+  clmPositions(skip: 0, first: 1000, where: { investor: $investor_address, totalBalance_gt: 0 }) {
+    managerBalance
+    rewardPoolBalance
+    totalBalance
+    clm {
+      ...InvestorTimelineClmPosition
     }
-    sharesBalance: managerBalance
     interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
-      timestamp
-      blockNumber
-      createdWith {
-        hash: id
-      }
-      sharesBalance: managerBalance
-      underlyingBalance0
-      underlyingBalance1
-      sharesBalanceDelta: managerBalanceDelta
-      underlyingBalance0Delta
-      underlyingBalance1Delta
-      token0ToNativePrice
-      token1ToNativePrice
-      nativeToUSDPrice
+      ...InvestorTimelineClmPositionInteraction
     }
   }
 }

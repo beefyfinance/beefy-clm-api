@@ -1,0 +1,9 @@
+query Status {
+  _meta {
+    block {
+      number
+      timestamp
+    }
+    hasIndexingErrors
+  }
+}
