@@ -9,6 +9,17 @@ const config: CodegenConfig = {
       plugins: ['typescript', 'typescript-operations', 'typescript-graphql-request'],
       config: {
         rawRequest: true,
+        strictScalars: true,
+        scalars: {
+          BigInt: {
+            input: 'string | number', // we can send a string or number to the server
+            output: 'string', // server will always return a string
+          },
+          Bytes: '`0x${string}`', // equivalent to viem `Hex` type
+          BigDecimal: 'string', // not used by our schema
+          Int8: 'string', // not used by our schema
+          Timestamp: 'string', // not used by our schema
+        },
       },
     },
     'src/queries/codegen/schema.graphql': {

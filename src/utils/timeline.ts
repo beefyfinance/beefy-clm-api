@@ -10,6 +10,8 @@ import { ZERO_ADDRESS } from './address';
 import { getLoggerFor } from './log';
 import { getAllSdks } from './sdk';
 import { JsonSerializable } from './json';
+import { Address } from './scalar-types';
+import { fromUnixTime } from './date';
 
 const logger = getLoggerFor('timeline');
 
@@ -96,7 +98,7 @@ const mergeClmPositionInteractions = (
         };
       } else {
         acc[txHash] = {
-          datetime: new Date(parseInt(interaction.timestamp, 10) * 1000),
+          datetime: fromUnixTime(interaction.timestamp),
           chain,
           transactionHash: txHash,
           managerToken,
@@ -156,7 +158,7 @@ export const clmPositionToInteractions = (
 };
 
 export async function getClmTimeline<T extends JsonSerializable>(
-  investor_address: string,
+  investor_address: Address,
   formatter: (interaction: TimelineClmInteraction) => T
 ): Promise<T[]> {
   // TODO fix if there is ever more than 1000 vaults or 1000 interactions

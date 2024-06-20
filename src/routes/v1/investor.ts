@@ -5,6 +5,7 @@ import { getAsyncCache } from '../../utils/async-lock';
 
 import { getClmTimeline } from '../../utils/timeline';
 import { TimelineClmInteraction } from '../../utils/timeline-types';
+import { Address } from '../../utils/scalar-types';
 
 export default async function (
   instance: FastifyInstance,
@@ -16,7 +17,7 @@ export default async function (
   // timeline endpoint
   {
     type UrlParams = {
-      investor_address: string;
+      investor_address: Address;
     };
 
     const urlParamsSchema = S.object().prop(
@@ -143,6 +144,6 @@ function clmInteractionToOutput(interaction: TimelineClmInteraction): TimelineCl
   };
 }
 
-async function getTimeline(investor_address: string) {
+async function getTimeline(investor_address: Address) {
   return getClmTimeline(investor_address, clmInteractionToOutput);
 }
