@@ -11,6 +11,9 @@ const config: CodegenConfig = {
         rawRequest: true,
       },
     },
+    'src/queries/codegen/schema.graphql': {
+      plugins: ['schema-ast'],
+    },
   },
 };
 export default config;

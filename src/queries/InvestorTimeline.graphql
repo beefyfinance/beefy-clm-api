@@ -55,7 +55,15 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
     clm {
       ...InvestorTimelineClmPosition
     }
-    interactions(first: $first, skip: $skip, orderBy: timestamp, orderDirection: asc) {
+    interactions(
+      first: $first
+      skip: $skip
+      orderBy: timestamp
+      orderDirection: asc
+      where: {
+        type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, REWARD_POOL_STAKE, REWARD_POOL_UNSTAKE]
+      }
+    ) {
       ...InvestorTimelineClmPositionInteraction
     }
   }
