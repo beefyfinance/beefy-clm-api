@@ -5,6 +5,7 @@ import { createCachedFactoryByChainId } from './factory';
 import { GraphQueryError } from './error';
 import { getLoggerFor } from './log';
 
+const SUBGRAPH_TAG = process.env.SUBGRAPH_TAG || 'latest';
 const logger = getLoggerFor('sdk');
 
 // adds the context to the response on all sdk queries
@@ -18,10 +19,9 @@ type EndpointSdk = {
 export const getAllSdks = () => allChainIds.flatMap(chain => getSdksForChain(chain));
 
 export const getSdksForChain = createCachedFactoryByChainId((chain: ChainId): EndpointSdk[] => {
-  const tag = 'latest';
-  const configs = [getSubgraphConfig(chain, tag)];
+  const configs = [getSubgraphConfig(chain, SUBGRAPH_TAG)];
   if (chain === 'arbitrum') {
-    configs.push(getSubgraphConfig(chain, tag, true));
+    configs.push(getSubgraphConfig(chain, SUBGRAPH_TAG, true));
   }
 
   return configs
