@@ -2,3 +2,4 @@
 /build
 /node_modules
 src/queries/codegen/sdk.ts
+src/queries/codegen/schema.graphql
