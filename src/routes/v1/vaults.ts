@@ -10,7 +10,9 @@ import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 import { addressSchema } from '../../schema/address';
 import { getAsyncCache } from '../../utils/async-lock';
 import { VaultsQuery } from '../../queries/codegen/sdk';
-import { max, uniq } from 'lodash';
+import { max, sortedUniq } from 'lodash';
+import { Address } from '../../utils/scalar-types';
+import { fromUnixTime, getUnixTime } from '../../utils/date';
 
 export default async function (
   instance: FastifyInstance,
@@ -60,7 +62,7 @@ export default async function (
     };
 
     type QueryParams = {
-      vaults?: string[];
+      vaults?: Address[];
     };
 
     const urlParamsSchema = S.object()
@@ -98,7 +100,7 @@ export default async function (
         const { chain, since } = request.params;
         const roundedSince = BigInt(since) / BigInt(60); // round to the minute
         const vaults = request.query.vaults || [];
-        const vaultsKey = uniq(vaults).join(',').toLocaleLowerCase();
+        const vaultsKey = sortedUniq(vaults.map(a => a.toLowerCase()).sort()).join(',');
         const result = await asyncCache.wrap(
           `vaults-harvests:${chain}:${roundedSince}:${vaultsKey}`,
           30 * 1000,
@@ -116,7 +118,7 @@ export default async function (
 const getVaults = async (chain: ChainId, period: Period) => {
   const now = new Date();
   const periodSeconds = getPeriodSeconds(period);
-  const since = BigInt(Math.floor(now.getTime() / 1000) - periodSeconds);
+  const since = getUnixTime(now) - periodSeconds;
 
   const res = await Promise.all(
     getSdksForChain(chain).map(sdk =>
@@ -124,7 +126,7 @@ const getVaults = async (chain: ChainId, period: Period) => {
         sdk,
         (sdk, skip, first) =>
           sdk.Vaults({
-            since: since.toString(),
+            since,
             skip,
             first,
           }),
@@ -163,7 +165,7 @@ const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: 
             interpretAsDecimal(fee.token1ToNativePrice, 18)
           )
         ),
-      collectTimestamp: new Date(fee.timestamp * 1000),
+      collectTimestamp: fromUnixTime(fee.timestamp),
       totalValueLocked: interpretAsDecimal(fee.underlyingMainAmount0, token0.decimals)
         .plus(interpretAsDecimal(fee.underlyingAltAmount0, token0.decimals))
         .times(interpretAsDecimal(fee.token0ToNativePrice, 18))
@@ -183,7 +185,7 @@ type VaultsHarvests = { vaultAddress: string; harvests: PreparedVaultHarvest[] }
 const getVaultsHarvests = async (
   chain: ChainId,
   since: number,
-  vaults: string[]
+  vaults: Address[]
 ): Promise<VaultsHarvests> => {
   const res = await Promise.all(
     getSdksForChain(chain).map(sdk =>

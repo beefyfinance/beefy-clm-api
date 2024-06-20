@@ -4,6 +4,8 @@ import FastifySwaggerUI from '@fastify/swagger-ui';
 import { API_ENV } from '../config/env';
 import V1 from './v1';
 
+const versionRegex = new RegExp(/^\/api\/(v[1-9]*[0-9])\//g);
+
 export default async function (
   instance: FastifyInstance,
   _opts: FastifyPluginOptions,
@@ -16,7 +18,17 @@ export default async function (
           title: 'API',
           version: '1.0.0',
         },
-        tags: [{ name: 'v1', description: 'API v1' }],
+      },
+      transform: ({ schema, url }) => {
+        const match = versionRegex.exec(url);
+        const version = match?.[1] || 'v1';
+        return {
+          schema: {
+            ...schema,
+            tags: schema.tags ? schema.tags.map(t => `${version}/${t}`) : [version],
+          },
+          url,
+        };
       },
     })
     .register(FastifySwaggerUI, {

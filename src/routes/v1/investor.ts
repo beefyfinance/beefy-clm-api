@@ -1,9 +1,11 @@
 import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
 import { addressSchema } from '../../schema/address';
-import { getAllSdks } from '../../utils/sdk';
-import { interpretAsDecimal } from '../../utils/decimal';
 import { getAsyncCache } from '../../utils/async-lock';
+
+import { getClmTimeline } from '../../utils/timeline';
+import { TimelineClmInteraction } from '../../utils/timeline-types';
+import { Address } from '../../utils/scalar-types';
 
 export default async function (
   instance: FastifyInstance,
@@ -12,10 +14,10 @@ export default async function (
 ) {
   const asyncCache = getAsyncCache();
 
-  // balances endpoint
+  // timeline endpoint
   {
     type UrlParams = {
-      investor_address: string;
+      investor_address: Address;
     };
 
     const urlParamsSchema = S.object().prop(
@@ -39,7 +41,7 @@ export default async function (
       async (request, reply) => {
         const { investor_address } = request.params;
         const res = await asyncCache.wrap(
-          `timeline:${investor_address}`,
+          `timeline:${investor_address.toLowerCase()}`,
           2 * 60 * 1000,
           async () => {
             return await getTimeline(investor_address);
@@ -53,69 +55,95 @@ export default async function (
   done();
 }
 
-const getTimeline = async (investor_address: string) => {
-  const res = await Promise.all(
-    getAllSdks().map(async sdk =>
-      sdk.InvestorTimeline({
-        investor_address,
-      })
-    )
-  );
-  return res.flatMap(chainRes => {
-    return chainRes.data.clmPositions.flatMap(position =>
-      position.interactions.map(interaction => {
-        const shareToken = position.vault.sharesToken;
-        const token0 = position.vault.underlyingToken0;
-        const token1 = position.vault.underlyingToken1;
-        const interactionToken0ToNative = interpretAsDecimal(interaction.token0ToNativePrice, 18);
-        const interactionToken1ToNative = interpretAsDecimal(interaction.token1ToNativePrice, 18);
-        const interactionNativeToUsd = interpretAsDecimal(interaction.nativeToUSDPrice, 18);
-        const share_balance = interpretAsDecimal(interaction.sharesBalance, shareToken.decimals);
-        const underlyingBalance0 = interpretAsDecimal(
-          interaction.underlyingBalance0,
-          token0.decimals
-        );
-        const underlyingBalance1 = interpretAsDecimal(
-          interaction.underlyingBalance1,
-          token1.decimals
-        );
-        const token0_to_usd = interactionToken0ToNative.mul(interactionNativeToUsd);
-        const token1_to_usd = interactionToken1ToNative.mul(interactionNativeToUsd);
-        const usd_balance = underlyingBalance0
-          .mul(token0_to_usd)
-          .add(underlyingBalance1.mul(token1_to_usd));
-        const share_diff = interpretAsDecimal(interaction.sharesBalanceDelta, shareToken.decimals);
-        const underlying0_diff = interpretAsDecimal(
-          interaction.underlyingBalance0Delta,
-          token0.decimals
-        );
-        const underlying1_diff = interpretAsDecimal(
-          interaction.underlyingBalance1Delta,
-          token1.decimals
-        );
-        const usd_diff = underlying0_diff
-          .mul(token0_to_usd)
-          .add(underlying1_diff.mul(token1_to_usd));
-        return {
-          datetime: new Date(parseInt(interaction.timestamp, 10) * 1000).toISOString(),
-          product_key: `beefy:vault:${chainRes.chain}:${position.vault.address}`,
-          display_name: position.vault.sharesToken.name,
-          chain: chainRes.chain,
-          is_eol: false,
-          is_dashboard_eol: false,
-          transaction_hash: interaction.createdWith.hash,
-          token0_to_usd: token0_to_usd.toString(),
-          token1_to_usd: token1_to_usd.toString(),
-          share_balance: share_balance.toString(),
-          underlying0_balance: underlyingBalance0.toString(),
-          underlying1_balance: underlyingBalance1.toString(),
-          usd_balance: usd_balance.toString(),
-          share_diff: share_diff.toString(),
-          underlying0_diff: underlying0_diff.toString(),
-          underlying1_diff: underlying1_diff.toString(),
-          usd_diff: usd_diff.toString(),
-        };
-      })
-    );
-  });
+type ClmInteractionLegacy = {
+  datetime: string;
+  product_key: string;
+  display_name: string;
+  chain: string;
+  is_eol: false;
+  is_dashboard_eol: false;
+  transaction_hash: string;
+
+  /** called shares for legacy reasons, this is now the total between manager and reward pool */
+  share_balance: string;
+  share_diff: string;
+
+  token0_to_usd: string;
+  underlying0_balance: string;
+  underlying0_diff: string;
+
+  token1_to_usd: string;
+  underlying1_balance: string;
+  underlying1_diff: string;
+
+  usd_balance: string;
+  usd_diff: string;
 };
+
+type ClmInteractionRewardPool = {
+  reward_pool_address: string;
+  reward_pool_balance: string;
+  reward_pool_diff: string;
+};
+
+type ClmInteractionBase = ClmInteractionLegacy & {
+  manager_address: string;
+  manager_balance: string;
+  manager_diff: string;
+  actions: string[];
+};
+
+type TimelineClmInteractionOutput =
+  | ClmInteractionBase
+  | (ClmInteractionBase & ClmInteractionRewardPool);
+
+function clmInteractionToOutput(interaction: TimelineClmInteraction): TimelineClmInteractionOutput {
+  const { rewardPoolToken, rewardPool } = interaction;
+  const hasRewardPool = !!rewardPoolToken && !!rewardPool;
+  // ensure we don't include partial reward pool data
+  const rewardPoolFields: ClmInteractionRewardPool | undefined = hasRewardPool
+    ? {
+        reward_pool_address: rewardPoolToken.address,
+        reward_pool_balance: rewardPool.balance.toString(),
+        reward_pool_diff: rewardPool.delta.toString(),
+      }
+    : undefined;
+
+  return {
+    datetime: interaction.datetime.toISOString(),
+    product_key: `beefy:vault:${interaction.chain}:${interaction.managerToken.address}`,
+    display_name: interaction.managerToken.name || interaction.managerToken.address,
+    chain: interaction.chain,
+    is_eol: false,
+    is_dashboard_eol: false,
+    transaction_hash: interaction.transactionHash,
+
+    token0_to_usd: interaction.token0ToUsd.toString(),
+    token1_to_usd: interaction.token1ToUsd.toString(),
+
+    // legacy: share -> total
+    share_balance: interaction.total.balance.toString(),
+    share_diff: interaction.total.delta.toString(),
+
+    manager_address: interaction.managerToken.address,
+    manager_balance: interaction.manager.balance.toString(),
+    manager_diff: interaction.manager.delta.toString(),
+
+    ...rewardPoolFields,
+
+    underlying0_balance: interaction.underlying0.balance.toString(),
+    underlying0_diff: interaction.underlying0.delta.toString(),
+
+    underlying1_balance: interaction.underlying1.balance.toString(),
+    underlying1_diff: interaction.underlying1.delta.toString(),
+
+    usd_balance: interaction.usd.balance.toString(),
+    usd_diff: interaction.usd.delta.toString(),
+
+    actions: interaction.actions,
+  };
+}
+
+async function getTimeline(investor_address: Address) {
+  return getClmTimeline(investor_address, clmInteractionToOutput);
+}

@@ -9,6 +9,7 @@ import { bigintSchema } from '../../schema/bigint';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { getAsyncCache } from '../../utils/async-lock';
 import { HarvestDataFragment, Token } from '../../queries/codegen/sdk';
+import { Address } from '../../utils/scalar-types';
 
 export default async function (
   instance: FastifyInstance,
@@ -21,7 +22,7 @@ export default async function (
   {
     type UrlParams = {
       chain: ChainId;
-      vault_address: string;
+      vault_address: Address;
     };
 
     const urlParamsSchema = S.object()
@@ -62,7 +63,7 @@ export default async function (
   {
     type UrlParams = {
       chain: ChainId;
-      vault_address: string;
+      vault_address: Address;
     };
 
     const urlParamsSchema = S.object()
@@ -104,7 +105,7 @@ export default async function (
   {
     type UrlParams = {
       chain: ChainId;
-      vault_address: string;
+      vault_address: Address;
       period: Period;
       since: string;
     };
@@ -151,7 +152,7 @@ export default async function (
   {
     type UrlParams = {
       chain: ChainId;
-      vault_address: string;
+      vault_address: Address;
       period: Period;
     };
 
@@ -193,7 +194,7 @@ export default async function (
   {
     type UrlParams = {
       chain: ChainId;
-      vault_address: string;
+      vault_address: Address;
     };
 
     const urlParamsSchema = S.object()
@@ -239,7 +240,7 @@ export default async function (
   done();
 }
 
-const getVaultPrice = async (chain: ChainId, vault_address: string) => {
+const getVaultPrice = async (chain: ChainId, vault_address: Address) => {
   const res = await Promise.all(
     getSdksForChain(chain).map(async sdk =>
       sdk.VaultPrice({
@@ -260,7 +261,7 @@ const getVaultPrice = async (chain: ChainId, vault_address: string) => {
   };
 };
 
-const getVaultHarvests = async (chain: ChainId, vault_address: string) => {
+const getVaultHarvests = async (chain: ChainId, vault_address: Address) => {
   const res = await Promise.all(
     getSdksForChain(chain).map(async sdk =>
       sdk.VaultHarvests({
@@ -318,7 +319,7 @@ export function prepareVaultHarvests(vault: {
 
 const getVaultHistoricPrices = async (
   chain: ChainId,
-  vault_address: string,
+  vault_address: Address,
   period: Period,
   since: string
 ) => {
@@ -353,7 +354,7 @@ const getVaultHistoricPrices = async (
 
 const getVaultHistoricPricesRange = async (
   chain: ChainId,
-  vault_address: string,
+  vault_address: Address,
   period: Period
 ) => {
   const res = await Promise.all(
@@ -371,12 +372,12 @@ const getVaultHistoricPricesRange = async (
   }
 
   return {
-    min: parseInt(vault.minSnapshot?.[0]?.roundedTimestamp || 0),
-    max: parseInt(vault.maxSnapshot?.[0]?.roundedTimestamp || 0),
+    min: parseInt(vault.minSnapshot?.[0]?.roundedTimestamp || '0'),
+    max: parseInt(vault.maxSnapshot?.[0]?.roundedTimestamp || '0'),
   };
 };
 
-const getVaultInvestors = async (chain: ChainId, vault_address: string) => {
+const getVaultInvestors = async (chain: ChainId, vault_address: Address) => {
   const res = await Promise.all(
     getSdksForChain(chain).map(async sdk =>
       paginateSdkCalls(
