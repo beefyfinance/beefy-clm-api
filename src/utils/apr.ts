@@ -121,14 +121,17 @@ export function calculateLastApr(
   }
 
   let durationSum = ZERO_BD;
+  let timeWeight = ZERO_BD;
   let weighedAPRSum = ZERO_BD;
 
+  // linearly weight the APRs, most recent APRs have full impact
   for (let i = 0; i < APRs.length; i++) {
-    durationSum = durationSum.plus(durations[i]);
-    weighedAPRSum = weighedAPRSum.plus(APRs[i].times(durations[i]));
+    durationSum = durationSum.plus(durations[i].dividedBy(periodMs));
+    timeWeight = timeWeight.plus(durations[i].times(durationSum));
+    weighedAPRSum = weighedAPRSum.plus(APRs[i].times(timeWeight));
   }
 
-  const apr = weighedAPRSum.div(durationSum);
+  const apr = weighedAPRSum.div(timeWeight);
   // we compound the APR to get the APY
   const annualPeriods = ONE_YEAR / periodMs;
   const annualCompounds = annualPeriods * compoundCount;
