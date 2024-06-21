@@ -1,5 +1,5 @@
 export function fromUnixTime(unixTime: number | string): Date {
-  const seconds: number = typeof unixTime === 'string' ? parseInt(unixTime, 10) : unixTime;
+  const seconds: number = typeof unixTime === 'string' ? Number.parseInt(unixTime, 10) : unixTime;
   return new Date(seconds * 1000);
 }
 

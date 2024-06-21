@@ -1,8 +1,8 @@
-import { ChainId, allChainIds } from '../config/chains';
 import { GraphQLClient } from 'graphql-request';
-import { Sdk, getSdk } from '../queries/codegen/sdk';
-import { createCachedFactoryByChainId } from './factory';
+import { type ChainId, allChainIds } from '../config/chains';
+import { type Sdk, getSdk } from '../queries/codegen/sdk';
 import { GraphQueryError } from './error';
+import { createCachedFactoryByChainId } from './factory';
 import { getLoggerFor } from './log';
 
 const SUBGRAPH_TAG = process.env.SUBGRAPH_TAG || 'latest';
@@ -30,7 +30,7 @@ export const getSdksForChain = createCachedFactoryByChainId((chain: ChainId): En
       return new Proxy(sdk, {
         get:
           (target, prop) =>
-          async (...args: any) => {
+          async (...args: unknown[]) => {
             // @ts-ignore
             const res = await target[prop](...args).catch((e: unknown) => {
               throw new GraphQueryError(e, context);
@@ -44,7 +44,7 @@ export const getSdksForChain = createCachedFactoryByChainId((chain: ChainId): En
 type SdkWithContext = SdkContext & { sdk: Sdk };
 type SdkConfig = () => SdkWithContext;
 
-function getSubgraphConfig(chain: ChainId, tag: string, isBeta: boolean = false): SdkConfig {
+function getSubgraphConfig(chain: ChainId, tag: string, isBeta = false): SdkConfig {
   const subgraph = getSubgraphName(chain, isBeta);
   return () => ({
     chain,
@@ -54,7 +54,7 @@ function getSubgraphConfig(chain: ChainId, tag: string, isBeta: boolean = false)
   });
 }
 
-function getSubgraphName(chain: ChainId, isBeta: boolean = false): string {
+function getSubgraphName(chain: ChainId, isBeta = false): string {
   return `beefy-clm-${chain}${isBeta ? '-beta' : ''}`;
 }
 
@@ -76,7 +76,7 @@ export async function paginateSdkCalls<R>(
   while (fetched < fetchAtMost) {
     const res = await fn(sdk, skip, pageSize);
     results.push(res);
-    let resCount = count(res);
+    const resCount = count(res);
     logger.debug(`Fetched ${resCount} results, total fetched: ${fetched}`);
     if (resCount < pageSize) {
       break;

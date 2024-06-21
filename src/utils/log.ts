@@ -1,4 +1,4 @@
-import { pino, type Logger, type LoggerOptions } from 'pino';
+import { type Logger, type LoggerOptions, pino } from 'pino';
 import { API_ENV, LOG_LEVEL } from '../config/env';
 
 const loggers: Record<string, Logger> = {};
@@ -24,7 +24,11 @@ export function getLoggerFor(name: string, extraOptions: LoggerOptions = {}) {
     loggers[name] = pino(getLoggerOptionsFor(name, extraOptions));
   }
 
-  return loggers[name]!;
+  if (!loggers[name]) {
+    throw new Error(`Failed to get logger for ${name}`);
+  }
+
+  return loggers[name];
 }
 
 export const defaultLogger = getLoggerFor('api');

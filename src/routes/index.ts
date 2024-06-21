@@ -1,6 +1,6 @@
-import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
+import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { API_ENV } from '../config/env';
 import V1 from './v1';
 

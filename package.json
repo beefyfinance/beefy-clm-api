@@ -12,9 +12,8 @@
     "start": "node build/index.js",
     "inspect": "node --inspect build/index.js",
     "dev": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
-    "format": "prettier --write src/**/*.{ts,graphql}",
-    "prettier:check": "prettier --check src/**/*.{ts,graphql}",
-    "prettier:fix": "prettier --write src/**/*.{ts,graphql}",
+    "format": "biome check src/**/*.{ts,graphql}",
+    "format:fix": "biome check --write --unsafe src/**/*.{ts,graphql}",
     "test": "npm run test:ts && npm run test:unit && npm run test:lint",
     "test:unit": "jest",
     "test:ts": "tsc --noEmit",
@@ -47,9 +46,10 @@
     "pino": "^8.19.0"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx,graphql,json}": "prettier --write"
+    "src/**/*.{ts,tsx,graphql,json}": "biome format --write"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.8.2",
     "@graphql-codegen/cli": "^5.0.2",
     "@graphql-codegen/typescript": "^4.0.7",
     "@graphql-codegen/typescript-graphql-request": "^6.2.0",
@@ -64,7 +64,6 @@
     "lint-staged": "^15.2.2",
     "npm-check-updates": "^16.14.18",
     "pino-pretty": "^11.0.0",
-    "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

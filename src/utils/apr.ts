@@ -42,10 +42,12 @@ export function evictOldAprEntries(state: AprState, periodMs: number, now: Date)
 }
 
 export function calculateLastApr(
-  state: AprState,
+  _state: AprState,
   periodMs: number,
   now: Date
 ): { apr: Decimal; apy: Decimal } {
+  let state = _state;
+
   if (periodMs <= 0) {
     logger.error('AprCalc: period cannot be negative or zero, got {}', [periodMs.toString()]);
     throw Error('AprCalc: period cannot be negative or zero');

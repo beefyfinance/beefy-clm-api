@@ -1,17 +1,17 @@
-import { BalanceDelta, TimelineClmInteraction, Token } from './timeline-types';
-import { ChainId } from '../config/chains';
-import {
+import type { ChainId } from '../config/chains';
+import type {
   InvestorTimelineClmPositionFragment,
   InvestorTimelineClmPositionInteractionFragment,
   InvestorTimelineTokenFragment,
 } from '../queries/codegen/sdk';
-import { interpretAsDecimal } from './decimal';
 import { ZERO_ADDRESS } from './address';
-import { getLoggerFor } from './log';
-import { getAllSdks } from './sdk';
-import { JsonSerializable } from './json';
-import { Address } from './scalar-types';
 import { fromUnixTime } from './date';
+import { interpretAsDecimal } from './decimal';
+import type { JsonSerializable } from './json';
+import { getLoggerFor } from './log';
+import type { Address } from './scalar-types';
+import { getAllSdks } from './sdk';
+import type { BalanceDelta, TimelineClmInteraction, Token } from './timeline-types';
 
 const logger = getLoggerFor('timeline');
 

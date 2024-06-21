@@ -1,6 +1,6 @@
 import AsyncLock from 'async-lock';
-import { getLoggerFor } from './log';
 import NodeCache from 'node-cache';
+import { getLoggerFor } from './log';
 
 const logger = getLoggerFor('cache');
 

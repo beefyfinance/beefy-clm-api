@@ -4,8 +4,8 @@ export function getNumberEnv(key: string, defaultValue: number): number {
     return defaultValue;
   }
 
-  const parsed = parseInt(value, 10);
-  if (isNaN(parsed) || !isFinite(parsed)) {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed) || !Number.isFinite(parsed)) {
     return defaultValue;
   }
 

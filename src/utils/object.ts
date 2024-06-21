@@ -12,7 +12,7 @@ export function keys<K extends string>(
  * Object.entries but keeps the type of the keys
  * @param object
  */
-export function entries<K extends string, V extends any>(
+export function entries<K extends string, V>(
   object: Record<K, V> | Partial<Record<K, V>>
 ): [K, V][] {
   return Object.entries(object) as [K, V][];

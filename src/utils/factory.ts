@@ -12,7 +12,10 @@ export function createCachedFactory<P, R>(
     if (cache[index] === undefined) {
       cache[index] = factoryFn(...args);
     }
-    return cache[index]!;
+    if (!cache[index]) {
+      throw new Error(`Factory function returned undefined for key: ${index}`);
+    }
+    return cache[index];
   };
 }
 

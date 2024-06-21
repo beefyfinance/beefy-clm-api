@@ -1,5 +1,5 @@
-import { SdkContext } from './sdk';
-import { ChainId } from '../config/chains';
+import type { ChainId } from '../config/chains';
+import type { SdkContext } from './sdk';
 
 export class FriendlyError extends Error {
   constructor(message: string, cause?: unknown) {
@@ -9,7 +9,7 @@ export class FriendlyError extends Error {
   }
 }
 
-function causeToMessage(cause: unknown, defaultMessage: string = 'Unknown error'): string {
+function causeToMessage(cause: unknown, defaultMessage = 'Unknown error'): string {
   if (cause) {
     if (cause instanceof Error) {
       return cause.message || cause.toString();
@@ -30,7 +30,7 @@ function causeToMessage(cause: unknown, defaultMessage: string = 'Unknown error'
 function causeToMessageGraph(
   cause: unknown,
   context: SdkContext,
-  defaultMessage: string = 'Unknown graph query error'
+  defaultMessage = 'Unknown graph query error'
 ): string {
   return `${causeToMessage(cause, defaultMessage)} (subgraph: ${context.subgraph}, tag: ${context.tag}, chain: ${context.chain})`;
 }

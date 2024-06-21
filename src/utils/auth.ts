@@ -1,4 +1,4 @@
-const apiKeys = process.env['API_KEYS']?.trim()?.split(',') || [];
+const apiKeys = process.env.API_KEYS?.trim()?.split(',') || [];
 const bearerPreamble = 'bearer ';
 const bearerPreambleLength = bearerPreamble.length;
 

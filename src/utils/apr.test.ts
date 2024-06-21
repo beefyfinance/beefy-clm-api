@@ -1,5 +1,11 @@
 import Decimal from 'decimal.js';
-import { calculateLastApr, prepareAprState, evictOldAprEntries, AprState, aprToApy } from './apr';
+import {
+  type AprState,
+  aprToApy,
+  calculateLastApr,
+  evictOldAprEntries,
+  prepareAprState,
+} from './apr';
 
 const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -14,7 +20,7 @@ describe('Apr', () => {
   });
 
   test('do not crash when TVL is zero now', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(100),
         collectTimestamp: new Date(0),
@@ -66,7 +72,7 @@ describe('Apr', () => {
   });
 
   test('should compute apr properly with one entry of zero duration', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(100),
         collectTimestamp: new Date(100 * 1000),
@@ -80,7 +86,7 @@ describe('Apr', () => {
   });
 
   test('Should calculate APR with one entry only, non regression for 0% apr on uniswap-cow-arb-weth-usdc.e-prod', async () => {
-    let aprState = [
+    const aprState = [
       {
         collectedAmount: new Decimal('0.00032000437230484107316'),
         collectTimestamp: new Date('2024-06-17T15:51:35.000Z'),
@@ -95,7 +101,7 @@ describe('Apr', () => {
   });
 
   test('should compute apr in the simplest case', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(10),
         collectTimestamp: new Date(0),
@@ -114,7 +120,7 @@ describe('Apr', () => {
   });
 
   test('should compute apr in the simplest case when the full period has not elapsed', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(10),
         collectTimestamp: new Date(0),
@@ -133,7 +139,7 @@ describe('Apr', () => {
   });
 
   test('should compute apr when yield changes', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(10),
         collectTimestamp: new Date(0),
@@ -157,7 +163,7 @@ describe('Apr', () => {
   });
 
   test('should compute apr when total value locked changes', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(100),
         collectTimestamp: new Date(0),
@@ -181,7 +187,7 @@ describe('Apr', () => {
   });
 
   test('should compute apr when yield and total value locked changes', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(100),
         collectTimestamp: new Date(0),
@@ -205,7 +211,7 @@ describe('Apr', () => {
   });
 
   test('should allow multiple changes in the same timestamp/block (multicall)', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       {
         collectedAmount: new Decimal(100),
         collectTimestamp: new Date(0),
@@ -234,7 +240,7 @@ describe('Apr', () => {
   });
 
   test('should compute apr when the day is not over yet', () => {
-    let aprState: AprState = [];
+    const aprState: AprState = [];
 
     // using 6 decimals
     const one = new Decimal('1000000');
@@ -278,7 +284,7 @@ describe('Apr', () => {
   });
 
   test('Should properly compute mooBeefy APR', () => {
-    let aprState = prepareAprState([
+    const aprState = prepareAprState([
       // these ones should be ignored
       {
         collectedAmount: new Decimal(0),
