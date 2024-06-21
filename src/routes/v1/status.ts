@@ -1,8 +1,8 @@
-import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
+import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
+import type { ChainId } from '../../config/chains';
 import { getAsyncCache } from '../../utils/async-lock';
-import { getAllSdks, SdkContext } from '../../utils/sdk';
-import { ChainId } from '../../config/chains';
+import { type SdkContext, getAllSdks } from '../../utils/sdk';
 
 export default async function (
   instance: FastifyInstance,
@@ -23,7 +23,7 @@ export default async function (
     };
 
     instance.get('/', { schema }, async (_, reply) => {
-      const res = await asyncCache.wrap(`status`, 60 * 1000, async () => {
+      const res = await asyncCache.wrap('status', 60 * 1000, async () => {
         return await getStatus();
       });
       reply.send(res);

@@ -1,18 +1,18 @@
-import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
+import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
-import { ChainId } from '../../config/chains';
-import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
-import { chainSchema } from '../../schema/chain';
-import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
-import { calculateLastApr, prepareAprState } from '../../utils/apr';
-import { interpretAsDecimal } from '../../utils/decimal';
-import { PreparedVaultHarvest, prepareVaultHarvests } from './vault';
-import { addressSchema } from '../../schema/address';
-import { getAsyncCache } from '../../utils/async-lock';
-import { VaultsQuery } from '../../queries/codegen/sdk';
 import { max, sortedUniq } from 'lodash';
-import { Address } from '../../utils/scalar-types';
+import type { ChainId } from '../../config/chains';
+import type { VaultsQuery } from '../../queries/codegen/sdk';
+import { addressSchema } from '../../schema/address';
+import { chainSchema } from '../../schema/chain';
+import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
+import { calculateLastApr, prepareAprState } from '../../utils/apr';
+import { getAsyncCache } from '../../utils/async-lock';
 import { fromUnixTime, getUnixTime } from '../../utils/date';
+import { interpretAsDecimal } from '../../utils/decimal';
+import type { Address } from '../../utils/scalar-types';
+import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
+import { type PreparedVaultHarvest, prepareVaultHarvests } from './vault';
 
 export default async function (
   instance: FastifyInstance,

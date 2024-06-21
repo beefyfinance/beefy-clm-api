@@ -1,11 +1,11 @@
-import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
+import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
 import { addressSchema } from '../../schema/address';
 import { getAsyncCache } from '../../utils/async-lock';
 
+import type { Address } from '../../utils/scalar-types';
 import { getClmTimeline } from '../../utils/timeline';
-import { TimelineClmInteraction } from '../../utils/timeline-types';
-import { Address } from '../../utils/scalar-types';
+import type { TimelineClmInteraction } from '../../utils/timeline-types';
 
 export default async function (
   instance: FastifyInstance,

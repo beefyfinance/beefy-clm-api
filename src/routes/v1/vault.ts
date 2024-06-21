@@ -1,15 +1,15 @@
-import { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
+import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import S from 'fluent-json-schema';
-import { ChainId } from '../../config/chains';
+import type { ChainId } from '../../config/chains';
+import type { HarvestDataFragment, Token } from '../../queries/codegen/sdk';
 import { addressSchema } from '../../schema/address';
-import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
-import { getPeriodSeconds, Period, periodSchema } from '../../schema/period';
-import { chainSchema } from '../../schema/chain';
 import { bigintSchema } from '../../schema/bigint';
-import { interpretAsDecimal } from '../../utils/decimal';
+import { chainSchema } from '../../schema/chain';
+import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
 import { getAsyncCache } from '../../utils/async-lock';
-import { HarvestDataFragment, Token } from '../../queries/codegen/sdk';
-import { Address } from '../../utils/scalar-types';
+import { interpretAsDecimal } from '../../utils/decimal';
+import type { Address } from '../../utils/scalar-types';
+import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
 
 export default async function (
   instance: FastifyInstance,
@@ -345,7 +345,7 @@ const getVaultHistoricPrices = async (
   const token1 = vault.underlyingToken1;
 
   return vault.snapshots.map(snapshot => ({
-    t: parseInt(snapshot.roundedTimestamp),
+    t: Number.parseInt(snapshot.roundedTimestamp),
     min: interpretAsDecimal(snapshot.priceRangeMin1, token1.decimals),
     v: interpretAsDecimal(snapshot.priceOfToken0InToken1, token1.decimals),
     max: interpretAsDecimal(snapshot.priceRangeMax1, token1.decimals),
@@ -372,8 +372,8 @@ const getVaultHistoricPricesRange = async (
   }
 
   return {
-    min: parseInt(vault.minSnapshot?.[0]?.roundedTimestamp || '0'),
-    max: parseInt(vault.maxSnapshot?.[0]?.roundedTimestamp || '0'),
+    min: Number.parseInt(vault.minSnapshot?.[0]?.roundedTimestamp || '0'),
+    max: Number.parseInt(vault.maxSnapshot?.[0]?.roundedTimestamp || '0'),
   };
 };
 

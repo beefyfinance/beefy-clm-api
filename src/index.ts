@@ -1,15 +1,15 @@
-import Fastify from 'fastify';
+import FastifyCors from '@fastify/cors';
+import FastifyEtag from '@fastify/etag';
 import FastifyHelmet from '@fastify/helmet';
 import FastifyRateLimit from '@fastify/rate-limit';
 import FastifyUnderPressure from '@fastify/under-pressure';
-import FastifyEtag from '@fastify/etag';
-import FastifyCors from '@fastify/cors';
-import { defaultLogger } from './utils/log';
-import routes from './routes/index';
-import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env';
-import { FriendlyError } from './utils/error';
 import Decimal from 'decimal.js';
+import Fastify from 'fastify';
+import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env';
+import routes from './routes/index';
 import { allowedToBypassRateLimit } from './utils/auth';
+import { FriendlyError } from './utils/error';
+import { defaultLogger } from './utils/log';
 
 Decimal.set({
   // make sure we have enough precision
@@ -35,7 +35,7 @@ server.register(async (instance, _opts, done) => {
       continueExceeding: true,
       skipOnError: false,
       enableDraftSpec: true,
-      allowList: request => allowedToBypassRateLimit(request.headers['authorization']),
+      allowList: request => allowedToBypassRateLimit(request.headers.authorization),
       errorResponseBuilder: (_request, context) => ({
         statusCode: 429,
         name: 'RateLimitExceededError',
@@ -48,11 +48,11 @@ server.register(async (instance, _opts, done) => {
       methods: ['GET'],
       origin: API_ENV === 'production' ? API_CORS_ORIGIN : true,
     })
-    .setReplySerializer(function (payload) {
-      return JSON.stringify(payload, (_key, value) =>
+    .setReplySerializer(payload =>
+      JSON.stringify(payload, (_key, value) =>
         typeof value === 'bigint' ? value.toString() : value
-      );
-    })
+      )
+    )
     .addHook('onSend', async (_req, reply) => {
       if (reply.raw.statusCode !== 200) {
         reply.header('cache-control', 'no-cache, no-store, must-revalidate');

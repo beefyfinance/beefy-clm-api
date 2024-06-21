@@ -17,7 +17,7 @@
     "test": "npm run test:ts && npm run test:unit && npm run test:lint",
     "test:unit": "jest",
     "test:ts": "tsc --noEmit",
-    "test:lint": "npm run prettier:check",
+    "test:lint": "biome ci",
     "package:check": "ncu",
     "package:fix": "ncu -u && npm install",
     "postinstall": "npm --silent run codegen",

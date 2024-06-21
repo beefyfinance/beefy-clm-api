@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import status from './status';
 import investor from './investor';
+import status from './status';
 import vault from './vault';
 import vaults from './vaults';
 
