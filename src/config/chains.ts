@@ -1,57 +1,20 @@
-import { keyBy } from 'lodash';
-import { keys } from '../utils/object';
+import { type Static, Type } from '@sinclair/typebox';
 
-export type Chain<T extends string = string> = {
-  id: T;
-  name: string;
-};
+export const chainIdSchema = Type.Union([
+  Type.Literal('arbitrum'),
+  Type.Literal('base'),
+  Type.Literal('optimism'),
+  Type.Literal('moonbeam'),
+  Type.Literal('linea'),
+  Type.Literal('polygon'),
+]);
+export type ChainId = Static<typeof chainIdSchema>;
 
-function toChainMap<T extends ReadonlyArray<Chain>>(arr: T) {
-  return keyBy(arr, 'id') as { [K in T[number]['id']]: Extract<T[number], { id: K }> };
-}
-
-export const chains = toChainMap([
-  {
-    id: 'arbitrum',
-    name: 'Arbitrum',
-  },
-  {
-    id: 'base',
-    name: 'Base',
-  },
-  {
-    id: 'optimism',
-    name: 'Optimism',
-  },
-  {
-    id: 'moonbeam',
-    name: 'Moonbeam',
-  },
-  {
-    id: 'linea',
-    name: 'Linea',
-  },
-  {
-    id: 'polygon',
-    name: 'Polygon',
-  },
-] as const satisfies ReadonlyArray<Chain>);
-
-export type Chains = typeof chains;
-export type ChainId = keyof Chains;
-
-export const allChainIds = keys(chains);
-
-export function getChain<T extends ChainId = ChainId>(id: T): Chain<T> {
-  if (id in chains) {
-    return chains[id];
-  }
-  throw new Error(`Unknown chain: ${id}`);
-}
-
-export function getChainOrUndefined<T extends ChainId = ChainId>(id: T): Chain<T> | undefined {
-  if (id in chains) {
-    return chains[id];
-  }
-  return undefined;
-}
+export const allChainIds: Array<ChainId> = [
+  'arbitrum',
+  'base',
+  'optimism',
+  'moonbeam',
+  'linea',
+  'polygon',
+];

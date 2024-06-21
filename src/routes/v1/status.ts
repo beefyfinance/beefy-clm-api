@@ -1,8 +1,8 @@
+import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
-import S from 'fluent-json-schema';
-import type { ChainId } from '../../config/chains';
+import { type ChainId, chainIdSchema } from '../../config/chains';
 import { getAsyncCache } from '../../utils/async-lock';
-import { type SdkContext, getAllSdks } from '../../utils/sdk';
+import { getAllSdks, sdkContextSchema } from '../../utils/sdk';
 
 export default async function (
   instance: FastifyInstance,
@@ -13,12 +13,10 @@ export default async function (
 
   // status endpoint
   {
-    const responseSchema = S.object();
-
     const schema: FastifySchema = {
       tags: ['status'],
       response: {
-        200: responseSchema,
+        200: statusSchema,
       },
     };
 
@@ -33,15 +31,17 @@ export default async function (
   done();
 }
 
-type EndpointStatus = {
-  subgraph: SdkContext['subgraph'];
-  tag: SdkContext['tag'];
-  blockNumber: number | null;
-  timestamp: number | null;
-  hasErrors: boolean;
-};
+const endpointStatusSchema = Type.Object({
+  subgraph: sdkContextSchema.properties.subgraph,
+  tag: sdkContextSchema.properties.tag,
+  blockNumber: Type.Union([Type.Number(), Type.Null()]),
+  timestamp: Type.Union([Type.Number(), Type.Null()]),
+  hasErrors: Type.Boolean(),
+});
+type EndpointStatus = Static<typeof endpointStatusSchema>;
 
-type Status = Partial<Record<ChainId, EndpointStatus[]>>;
+const statusSchema = Type.Partial(Type.Record(chainIdSchema, Type.Array(endpointStatusSchema)));
+type Status = Static<typeof statusSchema>;
 
 async function getStatus(): Promise<Status> {
   const sdks = getAllSdks();

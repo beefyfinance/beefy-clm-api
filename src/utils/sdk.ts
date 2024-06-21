@@ -1,5 +1,6 @@
+import { type Static, Type } from '@sinclair/typebox';
 import { GraphQLClient } from 'graphql-request';
-import { type ChainId, allChainIds } from '../config/chains';
+import { type ChainId, allChainIds, chainIdSchema } from '../config/chains';
 import { type Sdk, getSdk } from '../queries/codegen/sdk';
 import { GraphQueryError } from './error';
 import { createCachedFactoryByChainId } from './factory';
@@ -9,7 +10,13 @@ const SUBGRAPH_TAG = process.env.SUBGRAPH_TAG || 'latest';
 const logger = getLoggerFor('sdk');
 
 // adds the context to the response on all sdk queries
-export type SdkContext = { chain: ChainId; subgraph: string; tag: string };
+export const sdkContextSchema = Type.Object({
+  chain: chainIdSchema,
+  subgraph: Type.String(),
+  tag: Type.String(),
+});
+export type SdkContext = Static<typeof sdkContextSchema>;
+
 type EndpointSdk = {
   [key in keyof Sdk]: (
     ...args: Parameters<Sdk[key]>
