@@ -128,7 +128,7 @@ export function calculateLastApr(
   for (let i = 0; i < APRs.length; i++) {
     durationSum = durationSum.plus(durations[i].dividedBy(periodMs));
     timeWeight = timeWeight.plus(durations[i].times(durationSum));
-    weighedAPRSum = weighedAPRSum.plus(APRs[i].times(timeWeight));
+    weighedAPRSum = weighedAPRSum.plus(APRs[i].times(durations[i]).times(durationSum));
   }
 
   const apr = weighedAPRSum.div(timeWeight);
