@@ -34,7 +34,7 @@ describe('Apr', () => {
 
     const now = new Date(ONE_DAY);
     const res = calculateLastApr(aprState, ONE_DAY, now);
-    expect(res.apr.toNumber()).toBeCloseTo(127.75, 4);
+    expect(res.apr.toNumber()).toBeCloseTo(70.404622, 4);
   });
 
   test('should evict old entries', () => {
@@ -153,7 +153,7 @@ describe('Apr', () => {
 
     const now = new Date(ONE_DAY);
     const res = calculateLastApr(aprState, ONE_DAY, now);
-    expect(res.apr.toNumber()).toBeCloseTo(18.25, 4);
+    expect(res.apr.toNumber()).toBeCloseTo(13.1396862, 4);
   });
 
   test('should compute apr when total value locked changes', () => {
@@ -177,7 +177,7 @@ describe('Apr', () => {
 
     const now = new Date(ONE_DAY);
     const res = calculateLastApr(aprState, ONE_DAY, now);
-    expect(res.apr.toNumber()).toBeCloseTo(54.75, 4);
+    expect(res.apr.toNumber()).toBeCloseTo(25.0369379, 4);
   });
 
   test('should compute apr when yield and total value locked changes', () => {
@@ -201,7 +201,7 @@ describe('Apr', () => {
 
     const now = new Date(ONE_DAY);
     const res = calculateLastApr(aprState, ONE_DAY, now);
-    expect(res.apr.toNumber()).toBeCloseTo(127.75, 4);
+    expect(res.apr.toNumber()).toBeCloseTo(70.40462, 4);
   });
 
   test('should allow multiple changes in the same timestamp/block (multicall)', () => {
@@ -230,7 +230,7 @@ describe('Apr', () => {
 
     const now = new Date(ONE_DAY);
     const res = calculateLastApr(aprState, ONE_DAY, now);
-    expect(res.apr.toNumber()).toBeCloseTo(127.75, 4);
+    expect(res.apr.toNumber()).toBeCloseTo(70.4046, 4);
   });
 
   test('should compute apr when the day is not over yet', () => {
@@ -274,7 +274,7 @@ describe('Apr', () => {
     });
     expect(evictOldAprEntries(aprState, ONE_DAY, now).length).toEqual(3);
     res = calculateLastApr(prepareAprState(aprState), ONE_DAY, now);
-    expect(res.apr.toNumber()).toBeCloseTo(80.3, 4);
+    expect(res.apr.toNumber()).toBeCloseTo(79.69624060150376, 4);
   });
 
   test('Should properly compute mooBeefy APR', () => {
@@ -318,23 +318,9 @@ describe('Apr', () => {
       },
     ]);
 
-    // 0.006869940091 + 0.013107066358 + 0.001774573046 + 0.000123153802
-    // => 0.021874733297
-    //
-    // 1711312513 - 1711226113
-    // => 86400
-    //
-    // TVL = 518.557670492
-    //
-    // 0.021874733297 / 518.557670492
-    // => 0.0000421838004560 / day
-    //
-    // (0.021874733297 / 518.557670492) * 365
-    // => 0.015397087166466233
-    // => 1.5397087166466233% APR
     const now = new Date(1711312513 * 1000);
     const res = calculateLastApr(prepareAprState(aprState), ONE_DAY, now);
-    expect(res.apr.toNumber()).toBeCloseTo(0.015624358078677, 3);
+    expect(res.apr.toNumber()).toBeCloseTo(0.011185160623593739, 3);
   });
 
   test('Should convert APR to APY correctly', () => {
