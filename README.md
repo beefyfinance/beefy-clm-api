@@ -18,6 +18,9 @@ http://localhost:4000/api/v1/vault/arbitrum/0x4c32b8d26e6ab2ce401772514c999768f6
 https://clm-api.beefy.finance/api/v1/vault/arbitrum/0x4c32b8d26e6ab2ce401772514c999768f63afb4e/harvests
 http://localhost:4000/api/v1/vault/arbitrum/0x4c32b8d26e6ab2ce401772514c999768f63afb4e/harvests
 
+https://clm-api.beefy.finance/api/v1/vault/arbitrum/0x4c32b8d26e6ab2ce401772514c999768f63afb4e/investors
+http://localhost:4000/api/v1/vault/arbitrum/0x4c32b8d26e6ab2ce401772514c999768f63afb4e/investors
+
 https://clm-api.beefy.finance/api/v1/vaults/arbitrum/1d
 http://localhost:4000/api/v1/vaults/arbitrum/1d
 

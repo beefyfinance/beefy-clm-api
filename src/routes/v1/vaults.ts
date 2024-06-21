@@ -1,18 +1,17 @@
+import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
-import S from 'fluent-json-schema';
 import { max, sortedUniq } from 'lodash';
-import type { ChainId } from '../../config/chains';
+import { type ChainId, chainIdSchema } from '../../config/chains';
 import type { VaultsQuery } from '../../queries/codegen/sdk';
-import { addressSchema } from '../../schema/address';
-import { chainSchema } from '../../schema/chain';
-import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
+import { addressSchemaTypebox } from '../../schema/address';
+import { type Period, getPeriodSeconds, periodSchemaTypebox } from '../../schema/period';
 import { calculateLastApr, prepareAprState } from '../../utils/apr';
 import { getAsyncCache } from '../../utils/async-lock';
 import { fromUnixTime, getUnixTime } from '../../utils/date';
 import { interpretAsDecimal } from '../../utils/decimal';
-import type { Address } from '../../utils/scalar-types';
+import type { Address, Hex } from '../../utils/scalar-types';
 import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
-import { type PreparedVaultHarvest, prepareVaultHarvests } from './vault';
+import { prepareVaultHarvests, vaultHarvestSchema } from './vault';
 
 export default async function (
   instance: FastifyInstance,
@@ -23,22 +22,17 @@ export default async function (
 
   // vaults data for use by main api
   {
-    type UrlParams = {
-      chain: ChainId;
-      period: Period;
-    };
-
-    const urlParamsSchema = S.object()
-      .prop('chain', chainSchema.required().description('The chain to return vaults for'))
-      .prop('period', periodSchema.required().description('The period to return APR for'));
-
-    const responseSchema = S.array().items(S.object());
+    const urlParamsSchema = Type.Object({
+      chain: Type.Awaited(chainIdSchema, { description: 'The chain the vault is on' }),
+      period: Type.Awaited(periodSchemaTypebox, { description: 'The period to return APR for' }),
+    });
+    type UrlParams = Static<typeof urlParamsSchema>;
 
     const schema: FastifySchema = {
       tags: ['vaults'],
       params: urlParamsSchema,
       response: {
-        200: responseSchema,
+        200: vaultsSchema,
       },
     };
 
@@ -56,40 +50,29 @@ export default async function (
 
   // Vaults harvest data
   {
-    type UrlParams = {
-      chain: ChainId;
-      since: number;
-    };
+    const urlParamsSchema = Type.Object({
+      chain: Type.Awaited(chainIdSchema, {
+        description: 'The chain to return vaults harvest data for',
+      }),
+      since: Type.Number({ description: 'The unix timestamp to return harvests since' }),
+    });
+    type UrlParams = Static<typeof urlParamsSchema>;
 
-    type QueryParams = {
-      vaults?: Address[];
-    };
-
-    const urlParamsSchema = S.object()
-      .prop(
-        'chain',
-        chainSchema.required().description('The chain to return vaults harvest data for')
-      )
-      .prop(
-        'since',
-        S.number().required().description('The unix timestamp to return harvests since')
-      );
-
-    const queryParamsSchema = S.object().prop(
-      'vaults',
-      S.array()
-        .items(addressSchema.description('A vault address'))
-        .description('The vault addresses to return harvests for')
-    );
-
-    const responseSchema = S.array().items(S.object());
+    const queryParamsSchema = Type.Object({
+      vaults: Type.Optional(
+        Type.Array(addressSchemaTypebox, {
+          description: 'The vault addresses to return harvests for',
+        })
+      ),
+    });
+    type QueryParams = Static<typeof queryParamsSchema>;
 
     const schema: FastifySchema = {
       tags: ['vaults'],
       params: urlParamsSchema,
       querystring: queryParamsSchema,
       response: {
-        200: responseSchema,
+        200: manyVaultHarvestSchema,
       },
     };
 
@@ -104,7 +87,7 @@ export default async function (
         const result = await asyncCache.wrap(
           `vaults-harvests:${chain}:${roundedSince}:${vaultsKey}`,
           30 * 1000,
-          async () => await getVaultsHarvests(chain, since, vaults)
+          async () => await getManyVaultsHarvests(chain, since, vaults as Hex[])
         );
 
         reply.send(result);
@@ -115,7 +98,57 @@ export default async function (
   done();
 }
 
-const getVaults = async (chain: ChainId, period: Period) => {
+const vaultApySchema = Type.Object({
+  apr: Type.String(),
+  apy: Type.String(),
+});
+type VaultApy = Static<typeof vaultApySchema>;
+
+const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: Date): VaultApy => {
+  const token0 = vault.underlyingToken0;
+  const token1 = vault.underlyingToken1;
+
+  const aprState = prepareAprState(
+    vault.collectedFees.map(fee => ({
+      collectedAmount: interpretAsDecimal(fee.collectedAmount0, token0.decimals)
+        .times(interpretAsDecimal(fee.token0ToNativePrice, 18))
+        .plus(
+          interpretAsDecimal(fee.collectedAmount1, token1.decimals).times(
+            interpretAsDecimal(fee.token1ToNativePrice, 18)
+          )
+        ),
+      collectTimestamp: fromUnixTime(fee.timestamp),
+      totalValueLocked: interpretAsDecimal(fee.underlyingMainAmount0, token0.decimals)
+        .plus(interpretAsDecimal(fee.underlyingAltAmount0, token0.decimals))
+        .times(interpretAsDecimal(fee.token0ToNativePrice, 18))
+        .plus(
+          interpretAsDecimal(fee.underlyingMainAmount1, token1.decimals)
+            .plus(interpretAsDecimal(fee.underlyingAltAmount1, token1.decimals))
+            .times(interpretAsDecimal(fee.token1ToNativePrice, 18))
+        ),
+    }))
+  );
+
+  const apr = calculateLastApr(aprState, periodSeconds * 1000, now);
+  return {
+    apr: apr.apr.toString(),
+    apy: apr.apy.toString(),
+  };
+};
+
+const vaultSchema = Type.Intersect([
+  Type.Object({
+    vaultAddress: Type.String(),
+    priceRangeMin1: Type.String(),
+    priceOfToken0InToken1: Type.String(),
+    priceRangeMax1: Type.String(),
+  }),
+  vaultApySchema,
+]);
+const vaultsSchema = Type.Array(vaultSchema);
+type Vaults = Static<typeof vaultsSchema>;
+
+const getVaults = async (chain: ChainId, period: Period): Promise<Vaults> => {
   const now = new Date();
   const periodSeconds = getPeriodSeconds(period);
   const since = getUnixTime(now) - periodSeconds;
@@ -142,9 +175,12 @@ const getVaults = async (chain: ChainId, period: Period) => {
         const token1 = vault.underlyingToken1;
         return {
           vaultAddress: vault.vaultAddress,
-          priceRangeMin1: interpretAsDecimal(vault.priceRangeMin1, token1.decimals),
-          priceOfToken0InToken1: interpretAsDecimal(vault.priceOfToken0InToken1, token1.decimals),
-          priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals),
+          priceRangeMin1: interpretAsDecimal(vault.priceRangeMin1, token1.decimals).toString(),
+          priceOfToken0InToken1: interpretAsDecimal(
+            vault.priceOfToken0InToken1,
+            token1.decimals
+          ).toString(),
+          priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals).toString(),
           ...getVaultApy(vault, periodSeconds, now),
         };
       })
@@ -152,41 +188,19 @@ const getVaults = async (chain: ChainId, period: Period) => {
   );
 };
 
-const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: Date) => {
-  const token0 = vault.underlyingToken0;
-  const token1 = vault.underlyingToken1;
+const manyVaultHarvestSchema = Type.Array(
+  Type.Object({
+    vaultAddress: addressSchemaTypebox,
+    harvests: Type.Array(vaultHarvestSchema),
+  })
+);
+type ManyVaultsHarvests = Static<typeof manyVaultHarvestSchema>;
 
-  const aprState = prepareAprState(
-    vault.collectedFees.map(fee => ({
-      collectedAmount: interpretAsDecimal(fee.collectedAmount0, token0.decimals)
-        .times(interpretAsDecimal(fee.token0ToNativePrice, 18))
-        .plus(
-          interpretAsDecimal(fee.collectedAmount1, token1.decimals).times(
-            interpretAsDecimal(fee.token1ToNativePrice, 18)
-          )
-        ),
-      collectTimestamp: fromUnixTime(fee.timestamp),
-      totalValueLocked: interpretAsDecimal(fee.underlyingMainAmount0, token0.decimals)
-        .plus(interpretAsDecimal(fee.underlyingAltAmount0, token0.decimals))
-        .times(interpretAsDecimal(fee.token0ToNativePrice, 18))
-        .plus(
-          interpretAsDecimal(fee.underlyingMainAmount1, token1.decimals)
-            .plus(interpretAsDecimal(fee.underlyingAltAmount1, token1.decimals))
-            .times(interpretAsDecimal(fee.token1ToNativePrice, 18))
-        ),
-    }))
-  );
-
-  return calculateLastApr(aprState, periodSeconds * 1000, now);
-};
-
-type VaultsHarvests = { vaultAddress: string; harvests: PreparedVaultHarvest[] }[];
-
-const getVaultsHarvests = async (
+const getManyVaultsHarvests = async (
   chain: ChainId,
   since: number,
   vaults: Address[]
-): Promise<VaultsHarvests> => {
+): Promise<ManyVaultsHarvests> => {
   const res = await Promise.all(
     getSdksForChain(chain).map(sdk =>
       vaults.length
@@ -197,7 +211,7 @@ const getVaultsHarvests = async (
 
   const rawVaults = res.flatMap(chainRes => chainRes.data.clms);
 
-  return rawVaults.reduce((acc, vault): VaultsHarvests => {
+  return rawVaults.reduce((acc, vault): ManyVaultsHarvests => {
     if (vault.harvests.length === 0) {
       return acc;
     }
@@ -208,5 +222,5 @@ const getVaultsHarvests = async (
     });
 
     return acc;
-  }, [] as VaultsHarvests);
+  }, [] as ManyVaultsHarvests);
 };

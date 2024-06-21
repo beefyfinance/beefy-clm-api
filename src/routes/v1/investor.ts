@@ -1,9 +1,8 @@
+import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
-import S from 'fluent-json-schema';
-import { addressSchema } from '../../schema/address';
+import { addressSchemaTypebox } from '../../schema/address';
 import { getAsyncCache } from '../../utils/async-lock';
-
-import type { Address } from '../../utils/scalar-types';
+import type { Address, Hex } from '../../utils/scalar-types';
 import { getClmTimeline } from '../../utils/timeline';
 import type { TimelineClmInteraction } from '../../utils/timeline-types';
 
@@ -16,22 +15,16 @@ export default async function (
 
   // timeline endpoint
   {
-    type UrlParams = {
-      investor_address: Address;
-    };
-
-    const urlParamsSchema = S.object().prop(
-      'investor_address',
-      addressSchema.required().description('The investor address')
-    );
-
-    const responseSchema = S.array().items(S.object());
+    const urlParamsSchema = Type.Object({
+      investor_address: addressSchemaTypebox,
+    });
+    type UrlParams = Static<typeof urlParamsSchema>;
 
     const schema: FastifySchema = {
       tags: ['investor'],
       params: urlParamsSchema,
       response: {
-        200: responseSchema,
+        200: Type.Array(timelineClmInteractionOutputSchema),
       },
     };
 
@@ -44,7 +37,7 @@ export default async function (
           `timeline:${investor_address.toLowerCase()}`,
           2 * 60 * 1000,
           async () => {
-            return await getTimeline(investor_address);
+            return await getTimeline(investor_address as Hex);
           }
         );
         reply.send(res);
@@ -55,47 +48,54 @@ export default async function (
   done();
 }
 
-type ClmInteractionLegacy = {
-  datetime: string;
-  product_key: string;
-  display_name: string;
-  chain: string;
-  is_eol: false;
-  is_dashboard_eol: false;
-  transaction_hash: string;
+const clmInteractionLegacySchema = Type.Object({
+  datetime: Type.String(),
+  product_key: Type.String(),
+  display_name: Type.String(),
+  chain: Type.String(),
+  is_eol: Type.Boolean(),
+  is_dashboard_eol: Type.Boolean(),
+  transaction_hash: Type.String(),
 
   /** called shares for legacy reasons, this is now the total between manager and reward pool */
-  share_balance: string;
-  share_diff: string;
+  share_balance: Type.String(),
+  share_diff: Type.String(),
 
-  token0_to_usd: string;
-  underlying0_balance: string;
-  underlying0_diff: string;
+  token0_to_usd: Type.String(),
+  underlying0_balance: Type.String(),
+  underlying0_diff: Type.String(),
 
-  token1_to_usd: string;
-  underlying1_balance: string;
-  underlying1_diff: string;
+  token1_to_usd: Type.String(),
+  underlying1_balance: Type.String(),
+  underlying1_diff: Type.String(),
 
-  usd_balance: string;
-  usd_diff: string;
-};
+  usd_balance: Type.String(),
+  usd_diff: Type.String(),
+});
 
-type ClmInteractionRewardPool = {
-  reward_pool_address: string;
-  reward_pool_balance: string;
-  reward_pool_diff: string;
-};
+const clmInteractionRewardPoolSchema = Type.Object({
+  reward_pool_address: Type.String(),
+  reward_pool_balance: Type.String(),
+  reward_pool_diff: Type.String(),
+});
+type ClmInteractionRewardPool = Static<typeof clmInteractionRewardPoolSchema>;
 
-type ClmInteractionBase = ClmInteractionLegacy & {
-  manager_address: string;
-  manager_balance: string;
-  manager_diff: string;
-  actions: string[];
-};
+const clmInteractionManagerSchema = Type.Object({
+  manager_address: Type.String(),
+  manager_balance: Type.String(),
+  manager_diff: Type.String(),
+  actions: Type.Array(Type.String()),
+});
 
-type TimelineClmInteractionOutput =
-  | ClmInteractionBase
-  | (ClmInteractionBase & ClmInteractionRewardPool);
+const clmInteractionBaseSchema = Type.Intersect([
+  clmInteractionLegacySchema,
+  clmInteractionManagerSchema,
+]);
+const timelineClmInteractionOutputSchema = Type.Union([
+  clmInteractionBaseSchema,
+  Type.Intersect([clmInteractionBaseSchema, clmInteractionRewardPoolSchema]),
+]);
+type TimelineClmInteractionOutput = Static<typeof timelineClmInteractionOutputSchema>;
 
 function clmInteractionToOutput(interaction: TimelineClmInteraction): TimelineClmInteractionOutput {
   const { rewardPoolToken, rewardPool } = interaction;

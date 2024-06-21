@@ -1,11 +1,13 @@
+import { type Static, Type } from '@sinclair/typebox';
 import { S } from 'fluent-json-schema';
+
+export const periodSchemaTypebox = Type.Union([Type.Literal('1h'), Type.Literal('1d')]);
+export type Period = Static<typeof periodSchemaTypebox>;
 
 const periodToSeconds = {
   '1h': 3600,
   '1d': 86400,
-} as const;
-
-export type Period = keyof typeof periodToSeconds;
+} as Record<Period, number>;
 
 export const allPeriodIds = Object.keys(periodToSeconds) as Period[];
 
