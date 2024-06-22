@@ -2,13 +2,19 @@ import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import { type ChainId, chainIdSchema } from '../../config/chains';
 import type { HarvestDataFragment, Token } from '../../queries/codegen/sdk';
-import { addressSchemaTypebox } from '../../schema/address';
-import { bigintSchemaTypebox } from '../../schema/bigint';
-import { type Period, getPeriodSeconds, periodSchemaTypebox } from '../../schema/period';
+import { addressSchema } from '../../schema/address';
+import {
+  bigDecimalSchema,
+  bigintSchema,
+  timestampNumberSchema,
+  timestampStrSchema,
+} from '../../schema/bigint';
+import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
 import { getAsyncCache } from '../../utils/async-lock';
 import { interpretAsDecimal } from '../../utils/decimal';
 import type { Address, Hex } from '../../utils/scalar-types';
 import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
+import { setOpts } from '../../utils/typebox';
 
 export default async function (
   instance: FastifyInstance,
@@ -21,7 +27,7 @@ export default async function (
   {
     const urlParamsSchema = Type.Object({
       chain: chainIdSchema,
-      vault_address: addressSchemaTypebox,
+      vault_address: addressSchema,
     });
     type UrlParams = Static<typeof urlParamsSchema>;
 
@@ -29,7 +35,7 @@ export default async function (
       tags: ['vault'],
       params: urlParamsSchema,
       response: {
-        200: Type.Exclude(Type.Undefined(), vaultPriceSchema),
+        200: vaultPriceSchema,
       },
     };
 
@@ -56,8 +62,8 @@ export default async function (
   // vault harvests
   {
     const urlParamsSchema = Type.Object({
-      chain: Type.Awaited(chainIdSchema, { description: 'The chain the vault is on' }),
-      vault_address: Type.Awaited(addressSchemaTypebox, {
+      chain: setOpts(chainIdSchema, { description: 'The chain the vault is on' }),
+      vault_address: setOpts(addressSchema, {
         description: 'The vault contract address',
       }),
     });
@@ -96,12 +102,12 @@ export default async function (
   // historical prices
   {
     const urlParamsSchema = Type.Object({
-      chain: Type.Awaited(chainIdSchema, { description: 'The chain the vault is on' }),
-      vault_address: Type.Awaited(addressSchemaTypebox, {
+      chain: setOpts(chainIdSchema, { description: 'The chain the vault is on' }),
+      vault_address: setOpts(addressSchema, {
         description: 'The vault contract address',
       }),
-      period: Type.Awaited(periodSchemaTypebox, { description: 'The snapshot period for prices' }),
-      since: Type.Awaited(bigintSchemaTypebox, { description: 'The unix timestamp to start from' }),
+      period: setOpts(periodSchema, { description: 'The snapshot period for prices' }),
+      since: setOpts(timestampStrSchema, { description: 'The unix timestamp to start from' }),
     });
 
     type UrlParams = Static<typeof urlParamsSchema>;
@@ -139,11 +145,11 @@ export default async function (
   // historical data availability
   {
     const urlParamsSchema = Type.Object({
-      chain: Type.Awaited(chainIdSchema, { description: 'The chain the vault is on' }),
-      vault_address: Type.Awaited(addressSchemaTypebox, {
+      chain: setOpts(chainIdSchema, { description: 'The chain the vault is on' }),
+      vault_address: setOpts(addressSchema, {
         description: 'The vault contract address',
       }),
-      period: Type.Awaited(periodSchemaTypebox, { description: 'The snapshot period for prices' }),
+      period: setOpts(periodSchema, { description: 'The snapshot period for prices' }),
     });
 
     type UrlParams = Static<typeof urlParamsSchema>;
@@ -178,8 +184,8 @@ export default async function (
 
   {
     const urlParamsSchema = Type.Object({
-      chain: Type.Awaited(chainIdSchema, { description: 'The chain the vault is on' }),
-      vault_address: Type.Awaited(addressSchemaTypebox, {
+      chain: setOpts(chainIdSchema, { description: 'The chain the vault is on' }),
+      vault_address: setOpts(addressSchema, {
         description: 'The vault contract address',
       }),
     });
@@ -214,17 +220,17 @@ export default async function (
   done();
 }
 
-const vaultPriceSchema = Type.Union([
-  Type.Object({
-    min: Type.String(),
-    current: Type.String(),
-    max: Type.String(),
-  }),
-  Type.Undefined(),
-]);
+const vaultPriceSchema = Type.Object({
+  min: bigintSchema,
+  current: bigintSchema,
+  max: bigintSchema,
+});
 type VaultPrice = Static<typeof vaultPriceSchema>;
 
-const getVaultPrice = async (chain: ChainId, vault_address: Address): Promise<VaultPrice> => {
+const getVaultPrice = async (
+  chain: ChainId,
+  vault_address: Address
+): Promise<VaultPrice | undefined> => {
   const res = await Promise.all(
     getSdksForChain(chain).map(async sdk =>
       sdk.VaultPrice({
@@ -246,12 +252,12 @@ const getVaultPrice = async (chain: ChainId, vault_address: Address): Promise<Va
 };
 
 export const vaultHarvestSchema = Type.Object({
-  timestamp: Type.String({ description: 'The timestamp of the harvest' }),
-  compoundedAmount0: Type.String({ description: 'The amount of token0 compounded' }),
-  compoundedAmount1: Type.String({ description: 'The amount of token1 compounded' }),
-  token0ToUsd: Type.String({ description: 'The price of token0 in USD' }),
-  token1ToUsd: Type.String({ description: 'The price of token1 in USD' }),
-  totalSupply: Type.String({ description: 'The total supply of the vault' }),
+  timestamp: setOpts(timestampStrSchema, { description: 'The timestamp of the harvest' }),
+  compoundedAmount0: setOpts(bigDecimalSchema, { description: 'The amount of token0 compounded' }),
+  compoundedAmount1: setOpts(bigDecimalSchema, { description: 'The amount of token1 compounded' }),
+  token0ToUsd: setOpts(bigDecimalSchema, { description: 'The price of token0 in USD' }),
+  token1ToUsd: setOpts(bigDecimalSchema, { description: 'The price of token1 in USD' }),
+  totalSupply: setOpts(bigDecimalSchema, { description: 'The total supply of the vault' }),
 });
 export type VaultHarvest = Static<typeof vaultHarvestSchema>;
 const vaultHarvestsSchema = Type.Array(vaultHarvestSchema);
@@ -307,10 +313,10 @@ export function prepareVaultHarvests(vault: {
 
 const vaultHistoricPricesSchema = Type.Array(
   Type.Object({
-    t: Type.Number(),
-    min: Type.String(),
-    v: Type.String(),
-    max: Type.String(),
+    t: timestampNumberSchema,
+    min: bigDecimalSchema,
+    v: bigDecimalSchema,
+    max: bigDecimalSchema,
   })
 );
 type VaultHistoricPrices = Static<typeof vaultHistoricPricesSchema>;
@@ -385,13 +391,13 @@ const getVaultHistoricPricesRange = async (
 };
 
 const vaultInvestorSchema = Type.Object({
-  investor_address: addressSchemaTypebox,
-  total_shares_balance: Type.String(),
-  underlying_balance0: Type.String(),
-  underlying_balance1: Type.String(),
-  usd_balance0: Type.String(),
-  usd_balance1: Type.String(),
-  usd_balance: Type.String(),
+  investor_address: addressSchema,
+  total_shares_balance: bigDecimalSchema,
+  underlying_balance0: bigDecimalSchema,
+  underlying_balance1: bigDecimalSchema,
+  usd_balance0: bigDecimalSchema,
+  usd_balance1: bigDecimalSchema,
+  usd_balance: bigDecimalSchema,
 });
 const vaultInvestorsSchema = Type.Array(vaultInvestorSchema);
 type VaultInvestors = Static<typeof vaultInvestorsSchema>;

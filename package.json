@@ -38,7 +38,6 @@
     "async-lock": "^1.4.1",
     "decimal.js": "^10.4.3",
     "fastify": "^4.26.2",
-    "fluent-json-schema": "^4.2.1",
     "graphql": "^16.6.0",
     "graphql-request": "^6.1.0",
     "graphql-tag": "^2.12.6",

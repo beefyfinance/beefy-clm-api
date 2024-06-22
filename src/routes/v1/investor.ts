@@ -1,10 +1,12 @@
 import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
-import { addressSchemaTypebox } from '../../schema/address';
+import { chainIdSchema } from '../../config/chains';
+import { addressSchema, transactionHashSchema } from '../../schema/address';
+import { bigDecimalSchema } from '../../schema/bigint';
 import { getAsyncCache } from '../../utils/async-lock';
 import type { Address, Hex } from '../../utils/scalar-types';
 import { getClmTimeline } from '../../utils/timeline';
-import type { TimelineClmInteraction } from '../../utils/timeline-types';
+import { type TimelineClmInteraction, actionsEnumSchema } from '../../utils/timeline-types';
 
 export default async function (
   instance: FastifyInstance,
@@ -16,7 +18,7 @@ export default async function (
   // timeline endpoint
   {
     const urlParamsSchema = Type.Object({
-      investor_address: addressSchemaTypebox,
+      investor_address: addressSchema,
     });
     type UrlParams = Static<typeof urlParamsSchema>;
 
@@ -52,39 +54,39 @@ const clmInteractionLegacySchema = Type.Object({
   datetime: Type.String(),
   product_key: Type.String(),
   display_name: Type.String(),
-  chain: Type.String(),
+  chain: chainIdSchema,
   is_eol: Type.Boolean(),
   is_dashboard_eol: Type.Boolean(),
-  transaction_hash: Type.String(),
+  transaction_hash: transactionHashSchema,
 
   /** called shares for legacy reasons, this is now the total between manager and reward pool */
-  share_balance: Type.String(),
-  share_diff: Type.String(),
+  share_balance: bigDecimalSchema,
+  share_diff: bigDecimalSchema,
 
-  token0_to_usd: Type.String(),
-  underlying0_balance: Type.String(),
-  underlying0_diff: Type.String(),
+  token0_to_usd: bigDecimalSchema,
+  underlying0_balance: bigDecimalSchema,
+  underlying0_diff: bigDecimalSchema,
 
-  token1_to_usd: Type.String(),
-  underlying1_balance: Type.String(),
-  underlying1_diff: Type.String(),
+  token1_to_usd: bigDecimalSchema,
+  underlying1_balance: bigDecimalSchema,
+  underlying1_diff: bigDecimalSchema,
 
-  usd_balance: Type.String(),
-  usd_diff: Type.String(),
+  usd_balance: bigDecimalSchema,
+  usd_diff: bigDecimalSchema,
 });
 
 const clmInteractionRewardPoolSchema = Type.Object({
-  reward_pool_address: Type.String(),
-  reward_pool_balance: Type.String(),
-  reward_pool_diff: Type.String(),
+  reward_pool_address: addressSchema,
+  reward_pool_balance: bigDecimalSchema,
+  reward_pool_diff: bigDecimalSchema,
 });
 type ClmInteractionRewardPool = Static<typeof clmInteractionRewardPoolSchema>;
 
 const clmInteractionManagerSchema = Type.Object({
-  manager_address: Type.String(),
-  manager_balance: Type.String(),
-  manager_diff: Type.String(),
-  actions: Type.Array(Type.String()),
+  manager_address: addressSchema,
+  manager_balance: bigDecimalSchema,
+  manager_diff: bigDecimalSchema,
+  actions: Type.Array(actionsEnumSchema),
 });
 
 const clmInteractionBaseSchema = Type.Intersect([

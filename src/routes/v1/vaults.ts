@@ -3,14 +3,16 @@ import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fasti
 import { max, sortedUniq } from 'lodash';
 import { type ChainId, chainIdSchema } from '../../config/chains';
 import type { VaultsQuery } from '../../queries/codegen/sdk';
-import { addressSchemaTypebox } from '../../schema/address';
-import { type Period, getPeriodSeconds, periodSchemaTypebox } from '../../schema/period';
+import { addressSchema } from '../../schema/address';
+import { bigDecimalSchema, timestampNumberSchema } from '../../schema/bigint';
+import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
 import { calculateLastApr, prepareAprState } from '../../utils/apr';
 import { getAsyncCache } from '../../utils/async-lock';
 import { fromUnixTime, getUnixTime } from '../../utils/date';
 import { interpretAsDecimal } from '../../utils/decimal';
 import type { Address, Hex } from '../../utils/scalar-types';
 import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
+import { setOpts } from '../../utils/typebox';
 import { prepareVaultHarvests, vaultHarvestSchema } from './vault';
 
 export default async function (
@@ -23,8 +25,8 @@ export default async function (
   // vaults data for use by main api
   {
     const urlParamsSchema = Type.Object({
-      chain: Type.Awaited(chainIdSchema, { description: 'The chain the vault is on' }),
-      period: Type.Awaited(periodSchemaTypebox, { description: 'The period to return APR for' }),
+      chain: setOpts(chainIdSchema, { description: 'The chain the vault is on' }),
+      period: setOpts(periodSchema, { description: 'The period to return APR for' }),
     });
     type UrlParams = Static<typeof urlParamsSchema>;
 
@@ -51,16 +53,18 @@ export default async function (
   // Vaults harvest data
   {
     const urlParamsSchema = Type.Object({
-      chain: Type.Awaited(chainIdSchema, {
+      chain: setOpts(chainIdSchema, {
         description: 'The chain to return vaults harvest data for',
       }),
-      since: Type.Number({ description: 'The unix timestamp to return harvests since' }),
+      since: setOpts(timestampNumberSchema, {
+        description: 'The unix timestamp to return harvests since',
+      }),
     });
     type UrlParams = Static<typeof urlParamsSchema>;
 
     const queryParamsSchema = Type.Object({
       vaults: Type.Optional(
-        Type.Array(addressSchemaTypebox, {
+        Type.Array(addressSchema, {
           description: 'The vault addresses to return harvests for',
         })
       ),
@@ -99,8 +103,8 @@ export default async function (
 }
 
 const vaultApySchema = Type.Object({
-  apr: Type.String(),
-  apy: Type.String(),
+  apr: bigDecimalSchema,
+  apy: bigDecimalSchema,
 });
 type VaultApy = Static<typeof vaultApySchema>;
 
@@ -138,10 +142,10 @@ const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: 
 
 const vaultSchema = Type.Intersect([
   Type.Object({
-    vaultAddress: Type.String(),
-    priceRangeMin1: Type.String(),
-    priceOfToken0InToken1: Type.String(),
-    priceRangeMax1: Type.String(),
+    vaultAddress: addressSchema,
+    priceRangeMin1: bigDecimalSchema,
+    priceOfToken0InToken1: bigDecimalSchema,
+    priceRangeMax1: bigDecimalSchema,
   }),
   vaultApySchema,
 ]);
@@ -190,7 +194,7 @@ const getVaults = async (chain: ChainId, period: Period): Promise<Vaults> => {
 
 const manyVaultHarvestSchema = Type.Array(
   Type.Object({
-    vaultAddress: addressSchemaTypebox,
+    vaultAddress: addressSchema,
     harvests: Type.Array(vaultHarvestSchema),
   })
 );

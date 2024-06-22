@@ -1,25 +1,15 @@
-import { type Static, Type } from '@sinclair/typebox';
+import { Enum } from '@sinclair/typebox';
+import { StringEnum } from '../utils/typebox';
 
-export const chainIdSchema = Type.Union(
-  [
-    Type.Literal('arbitrum'),
-    Type.Literal('base'),
-    Type.Literal('optimism'),
-    Type.Literal('moonbeam'),
-    Type.Literal('linea'),
-    Type.Literal('polygon'),
-  ],
-  {
-    description: 'Chain ID',
-  }
-);
-export type ChainId = Static<typeof chainIdSchema>;
+export enum ChainId {
+  arbitrum = 'arbitrum',
+  base = 'base',
+  optimism = 'optimism',
+  moonbeam = 'moonbeam',
+  linea = 'linea',
+  polygon = 'polygon',
+}
 
-export const allChainIds: Array<ChainId> = [
-  'arbitrum',
-  'base',
-  'optimism',
-  'moonbeam',
-  'linea',
-  'polygon',
-];
+export const allChainIds: Array<ChainId> = Object.values(ChainId);
+export const chainIdSchema = StringEnum(allChainIds);
+export const chainIdAsKeySchema = Enum(ChainId);

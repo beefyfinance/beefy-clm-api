@@ -1,17 +1,19 @@
-import { type Static, Type } from '@sinclair/typebox';
-import { S } from 'fluent-json-schema';
+import { Type } from '@sinclair/typebox';
+import { StringEnum } from '../utils/typebox';
 
-export const periodSchemaTypebox = Type.Union([Type.Literal('1h'), Type.Literal('1d')]);
-export type Period = Static<typeof periodSchemaTypebox>;
+export enum Period {
+  '1h' = '1h',
+  '1d' = '1d',
+}
+
+export const allPeriodIds: Array<Period> = Object.values(Period);
+export const periodSchema = StringEnum(allPeriodIds);
+export const periodAsKeySchema = Type.Enum(Period);
 
 const periodToSeconds = {
   '1h': 3600,
   '1d': 86400,
 } as Record<Period, number>;
-
-export const allPeriodIds = Object.keys(periodToSeconds) as Period[];
-
-export const periodSchema = S.string().enum(allPeriodIds).examples(allPeriodIds);
 
 export function getPeriodSeconds(period: Period) {
   const seconds = periodToSeconds[period];

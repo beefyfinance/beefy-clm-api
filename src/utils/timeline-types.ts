@@ -1,5 +1,8 @@
+import type { Static } from '@sinclair/typebox';
 import type Decimal from 'decimal.js';
 import type { ChainId } from '../config/chains';
+import { ClmPositionInteractionType } from '../queries/codegen/sdk';
+import { StringEnum } from './typebox';
 
 export type BalanceDelta = {
   balance: Decimal;
@@ -11,6 +14,9 @@ export type Token = {
   decimals: number;
   name?: string | undefined;
 };
+
+export const actionsEnumSchema = StringEnum(Object.values(ClmPositionInteractionType));
+type ActionsEnum = Static<typeof actionsEnumSchema>;
 
 export type TimelineClmInteraction = {
   datetime: Date;
@@ -26,5 +32,5 @@ export type TimelineClmInteraction = {
   underlying0: BalanceDelta;
   underlying1: BalanceDelta;
   usd: BalanceDelta;
-  actions: string[];
+  actions: ActionsEnum[];
 };
