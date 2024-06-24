@@ -8,6 +8,7 @@ export enum ChainId {
   moonbeam = 'moonbeam',
   linea = 'linea',
   polygon = 'polygon',
+  zksync = 'zksync',
 }
 
 export const allChainIds: Array<ChainId> = Object.values(ChainId);
