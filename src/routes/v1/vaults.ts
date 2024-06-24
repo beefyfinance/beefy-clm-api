@@ -11,7 +11,7 @@ import { getAsyncCache } from '../../utils/async-lock';
 import { fromUnixTime, getUnixTime } from '../../utils/date';
 import { interpretAsDecimal } from '../../utils/decimal';
 import type { Address, Hex } from '../../utils/scalar-types';
-import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
+import { getSdksForChain, paginate } from '../../utils/sdk';
 import { setOpts } from '../../utils/typebox';
 import { prepareVaultHarvests, vaultHarvestSchema } from './vault';
 
@@ -159,17 +159,15 @@ const getVaults = async (chain: ChainId, period: Period): Promise<Vaults> => {
 
   const res = await Promise.all(
     getSdksForChain(chain).map(sdk =>
-      paginateSdkCalls(
-        sdk,
-        (sdk, skip, first) =>
+      paginate({
+        fetchPage: ({ skip, first }) =>
           sdk.Vaults({
             since,
             skip,
             first,
           }),
-        res => max(res.data.clms.map(vault => vault.collectedFees.length)) || 0,
-        { pageSize: 1000, fetchAtMost: 100_000 }
-      )
+        count: res => max(res.data.clms.map(vault => vault.collectedFees.length)) || 0,
+      })
     )
   );
 

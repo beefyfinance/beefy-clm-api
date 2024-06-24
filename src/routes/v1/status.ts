@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fasti
 import { type ChainId, chainIdAsKeySchema } from '../../config/chains';
 import { timestampNumberSchema } from '../../schema/bigint';
 import { getAsyncCache } from '../../utils/async-lock';
-import { getAllSdks, sdkContextSchema } from '../../utils/sdk';
+import { executeOnAllSdks, sdkContextSchema } from '../../utils/sdk';
 
 export default async function (
   instance: FastifyInstance,
@@ -45,14 +45,9 @@ const statusSchema = Type.Record(chainIdAsKeySchema, Type.Array(endpointStatusSc
 type Status = Static<typeof statusSchema>;
 
 async function getStatus(): Promise<Status> {
-  const sdks = getAllSdks();
-  const results = await Promise.all(
-    sdks.map(async sdk => {
-      return await sdk.Status();
-    })
-  );
+  const res = await executeOnAllSdks(sdk => sdk.Status());
 
-  return results
+  return res.results
     .map((res): EndpointStatus & { chain: ChainId } => ({
       chain: res.chain,
       subgraph: res.subgraph,

@@ -27,6 +27,7 @@ fragment InvestorTimelineClmPosition on CLM {
 
 fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   id
+  
   timestamp
   blockNumber
   createdWith {
@@ -48,23 +49,31 @@ fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
 }
 
 query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
-  clmPositions(skip: 0, first: 1000, where: { investor: $investor_address, totalBalance_gt: 0 }) {
+  clmPositions(skip: $skip, first: $first, where: { investor: $investor_address, totalBalance_gt: 0 }) {
+    id
+    
     managerBalance
     rewardPoolBalance
     totalBalance
     clm {
       ...InvestorTimelineClmPosition
     }
-    interactions(
+  }
+  
+  clmPositionInteractions(
       first: $first
       skip: $skip
       orderBy: timestamp
       orderDirection: asc
       where: {
+        investor: $investor_address,
         type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, REWARD_POOL_STAKE, REWARD_POOL_UNSTAKE]
       }
-    ) {
-      ...InvestorTimelineClmPositionInteraction
+  ) {
+    ...InvestorTimelineClmPositionInteraction
+    
+    investorPosition {
+      id
     }
   }
 }

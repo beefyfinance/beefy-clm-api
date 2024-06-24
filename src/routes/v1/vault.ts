@@ -13,7 +13,7 @@ import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period
 import { getAsyncCache } from '../../utils/async-lock';
 import { interpretAsDecimal } from '../../utils/decimal';
 import type { Address, Hex } from '../../utils/scalar-types';
-import { getSdksForChain, paginateSdkCalls } from '../../utils/sdk';
+import { getSdksForChain, paginate } from '../../utils/sdk';
 import { setOpts } from '../../utils/typebox';
 
 export default async function (
@@ -408,17 +408,15 @@ const getVaultInvestors = async (
 ): Promise<VaultInvestors> => {
   const res = await Promise.all(
     getSdksForChain(chain).map(async sdk =>
-      paginateSdkCalls(
-        sdk,
-        (sdk, skip, first) =>
+      paginate({
+        fetchPage: ({ skip, first }) =>
           sdk.VaultInvestors({
             clmAddress: vault_address,
             skip,
             first,
           }),
-        res => res.data.clmPositions.length,
-        { pageSize: 1000, fetchAtMost: 100_000 }
-      )
+        count: res => res.data.clmPositions.length,
+      })
     )
   );
 

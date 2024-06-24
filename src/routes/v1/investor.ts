@@ -5,8 +5,7 @@ import { addressSchema, transactionHashSchema } from '../../schema/address';
 import { bigDecimalSchema } from '../../schema/bigint';
 import { getAsyncCache } from '../../utils/async-lock';
 import type { Address, Hex } from '../../utils/scalar-types';
-import { getClmTimeline } from '../../utils/timeline';
-import { type TimelineClmInteraction, actionsEnumSchema } from '../../utils/timeline-types';
+import { actionsEnumSchema, getClmTimeline } from '../../utils/timeline';
 
 export default async function (
   instance: FastifyInstance,
@@ -99,53 +98,53 @@ const timelineClmInteractionOutputSchema = Type.Union([
 ]);
 type TimelineClmInteractionOutput = Static<typeof timelineClmInteractionOutputSchema>;
 
-function clmInteractionToOutput(interaction: TimelineClmInteraction): TimelineClmInteractionOutput {
-  const { rewardPoolToken, rewardPool } = interaction;
-  const hasRewardPool = !!rewardPoolToken && !!rewardPool;
-  // ensure we don't include partial reward pool data
-  const rewardPoolFields: ClmInteractionRewardPool | undefined = hasRewardPool
-    ? {
-        reward_pool_address: rewardPoolToken.address,
-        reward_pool_balance: rewardPool.balance.toString(),
-        reward_pool_diff: rewardPool.delta.toString(),
-      }
-    : undefined;
+async function getTimeline(investor_address: Address): Promise<TimelineClmInteractionOutput[]> {
+  const timeline = await getClmTimeline(investor_address);
 
-  return {
-    datetime: interaction.datetime.toISOString(),
-    product_key: `beefy:vault:${interaction.chain}:${interaction.managerToken.address}`,
-    display_name: interaction.managerToken.name || interaction.managerToken.address,
-    chain: interaction.chain,
-    is_eol: false,
-    is_dashboard_eol: false,
-    transaction_hash: interaction.transactionHash,
+  return timeline.map((interaction): TimelineClmInteractionOutput => {
+    const { rewardPoolToken, rewardPool } = interaction;
+    const hasRewardPool = !!rewardPoolToken && !!rewardPool;
+    // ensure we don't include partial reward pool data
+    const rewardPoolFields: ClmInteractionRewardPool | undefined = hasRewardPool
+      ? {
+          reward_pool_address: rewardPoolToken.address,
+          reward_pool_balance: rewardPool.balance.toString(),
+          reward_pool_diff: rewardPool.delta.toString(),
+        }
+      : undefined;
 
-    token0_to_usd: interaction.token0ToUsd.toString(),
-    token1_to_usd: interaction.token1ToUsd.toString(),
+    return {
+      datetime: interaction.datetime.toISOString(),
+      product_key: `beefy:vault:${interaction.chain}:${interaction.managerToken.address}`,
+      display_name: interaction.managerToken.name || interaction.managerToken.address,
+      chain: interaction.chain,
+      is_eol: false,
+      is_dashboard_eol: false,
+      transaction_hash: interaction.transactionHash,
 
-    // legacy: share -> total
-    share_balance: interaction.total.balance.toString(),
-    share_diff: interaction.total.delta.toString(),
+      token0_to_usd: interaction.token0ToUsd.toString(),
+      token1_to_usd: interaction.token1ToUsd.toString(),
 
-    manager_address: interaction.managerToken.address,
-    manager_balance: interaction.manager.balance.toString(),
-    manager_diff: interaction.manager.delta.toString(),
+      // legacy: share -> total
+      share_balance: interaction.total.balance.toString(),
+      share_diff: interaction.total.delta.toString(),
 
-    ...rewardPoolFields,
+      manager_address: interaction.managerToken.address,
+      manager_balance: interaction.manager.balance.toString(),
+      manager_diff: interaction.manager.delta.toString(),
 
-    underlying0_balance: interaction.underlying0.balance.toString(),
-    underlying0_diff: interaction.underlying0.delta.toString(),
+      ...rewardPoolFields,
 
-    underlying1_balance: interaction.underlying1.balance.toString(),
-    underlying1_diff: interaction.underlying1.delta.toString(),
+      underlying0_balance: interaction.underlying0.balance.toString(),
+      underlying0_diff: interaction.underlying0.delta.toString(),
 
-    usd_balance: interaction.usd.balance.toString(),
-    usd_diff: interaction.usd.delta.toString(),
+      underlying1_balance: interaction.underlying1.balance.toString(),
+      underlying1_diff: interaction.underlying1.delta.toString(),
 
-    actions: interaction.actions,
-  };
-}
+      usd_balance: interaction.usd.balance.toString(),
+      usd_diff: interaction.usd.delta.toString(),
 
-async function getTimeline(investor_address: Address) {
-  return getClmTimeline(investor_address, clmInteractionToOutput);
+      actions: interaction.actions,
+    };
+  });
 }

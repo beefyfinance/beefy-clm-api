@@ -1,19 +1,53 @@
+import type { Static } from '@sinclair/typebox';
+import type Decimal from 'decimal.js';
+import { groupBy, keyBy } from 'lodash';
 import type { ChainId } from '../config/chains';
-import type {
-  InvestorTimelineClmPositionFragment,
-  InvestorTimelineClmPositionInteractionFragment,
-  InvestorTimelineTokenFragment,
+import {
+  ClmPositionInteractionType,
+  type InvestorTimelineClmPositionFragment,
+  type InvestorTimelineClmPositionInteractionFragment,
+  type InvestorTimelineTokenFragment,
 } from '../queries/codegen/sdk';
 import { ZERO_ADDRESS } from './address';
 import { fromUnixTime } from './date';
 import { interpretAsDecimal } from './decimal';
-import type { JsonSerializable } from './json';
 import { getLoggerFor } from './log';
 import type { Address } from './scalar-types';
-import { getAllSdks } from './sdk';
-import type { BalanceDelta, TimelineClmInteraction, Token } from './timeline-types';
+import { executeOnAllSdks, paginate } from './sdk';
+import { StringEnum } from './typebox';
 
 const logger = getLoggerFor('timeline');
+
+export type BalanceDelta = {
+  balance: Decimal;
+  delta: Decimal;
+};
+
+export type Token = {
+  address: string;
+  decimals: number;
+  name?: string | undefined;
+};
+
+export const actionsEnumSchema = StringEnum(Object.values(ClmPositionInteractionType));
+type ActionsEnum = Static<typeof actionsEnumSchema>;
+
+type TimelineClmInteraction = {
+  datetime: Date;
+  chain: ChainId;
+  transactionHash: string;
+  managerToken: Token;
+  rewardPoolToken: Token | undefined;
+  token0ToUsd: Decimal;
+  token1ToUsd: Decimal;
+  manager: BalanceDelta;
+  rewardPool: BalanceDelta | undefined;
+  total: BalanceDelta;
+  underlying0: BalanceDelta;
+  underlying1: BalanceDelta;
+  usd: BalanceDelta;
+  actions: ActionsEnum[];
+};
 
 const mergeBalanceDelta = <T extends BalanceDelta>(prev: T, next: T): T => {
   return {
@@ -133,7 +167,7 @@ function toToken(from: InvestorTimelineTokenFragment | undefined): Token | undef
     : undefined;
 }
 
-export const clmPositionToInteractions = (
+const clmPositionToInteractions = (
   chainId: ChainId,
   position: InvestorTimelineClmPositionFragment,
   interactions: InvestorTimelineClmPositionInteractionFragment[]
@@ -157,22 +191,37 @@ export const clmPositionToInteractions = (
   );
 };
 
-export async function getClmTimeline<T extends JsonSerializable>(
-  investor_address: Address,
-  formatter: (interaction: TimelineClmInteraction) => T
-): Promise<T[]> {
-  // TODO fix if there is ever more than 1000 vaults or 1000 interactions
-  const res = await Promise.all(
-    getAllSdks().map(async sdk =>
-      sdk.InvestorTimeline({
-        investor_address,
-      })
-    )
+export async function getClmTimeline(investor_address: Address): Promise<TimelineClmInteraction[]> {
+  const res = await executeOnAllSdks(sdk =>
+    paginate({
+      fetchPage: ({ skip, first }) => sdk.InvestorTimeline({ investor_address, first, skip }),
+      count: res => [res.data.clmPositions.length, res.data.clmPositionInteractions.length],
+    })
   );
 
-  return res.flatMap(chainRes =>
-    chainRes.data.clmPositions.flatMap(position =>
-      clmPositionToInteractions(chainRes.chain, position.clm, position.interactions).map(formatter)
-    )
+  const positionsByChainAndId = keyBy(
+    res.results.flatMap(pageRes =>
+      pageRes.flatMap(chainRes =>
+        chainRes.data.clmPositions.map(position => ({ ...position, chain: chainRes.chain }))
+      )
+    ),
+    position => `${position.chain}-${position.id}`
   );
+
+  const interactionsByChainAndPositionId = groupBy(
+    res.results.flatMap(pageRes =>
+      pageRes.flatMap(chainRes =>
+        chainRes.data.clmPositionInteractions.map(interaction => ({
+          ...interaction,
+          chain: chainRes.chain,
+        }))
+      )
+    ),
+    interaction => `${interaction.chain}-${interaction.investorPosition.id}`
+  );
+
+  return Object.entries(positionsByChainAndId).flatMap(([chainAndPositionId, position]) => {
+    const interactions = interactionsByChainAndPositionId[chainAndPositionId] || [];
+    return clmPositionToInteractions(position.chain, position.clm, interactions);
+  });
 }
