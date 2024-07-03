@@ -102,12 +102,13 @@ async function getTimeline(investor_address: Address): Promise<TimelineClmIntera
   const timeline = await getClmTimeline(investor_address);
 
   return timeline.map((interaction): TimelineClmInteractionOutput => {
-    const { rewardPoolToken, rewardPool } = interaction;
-    const hasRewardPool = !!rewardPoolToken && !!rewardPool;
+    const { rewardPoolTokens, rewardPool } = interaction;
+    const hasRewardPool = rewardPoolTokens.length > 0;
+
     // ensure we don't include partial reward pool data
     const rewardPoolFields: ClmInteractionRewardPool | undefined = hasRewardPool
       ? {
-          reward_pool_address: rewardPoolToken.address,
+          reward_pool_address: rewardPoolTokens.map(t => t.address).join(','), // multiple reward pools
           reward_pool_balance: rewardPool.balance.toString(),
           reward_pool_diff: rewardPool.delta.toString(),
         }

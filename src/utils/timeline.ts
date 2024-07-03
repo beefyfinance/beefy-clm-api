@@ -1,5 +1,5 @@
 import type { Static } from '@sinclair/typebox';
-import type Decimal from 'decimal.js';
+import Decimal from 'decimal.js';
 import { groupBy, keyBy } from 'lodash';
 import type { ChainId } from '../config/chains';
 import {
@@ -37,11 +37,11 @@ type TimelineClmInteraction = {
   chain: ChainId;
   transactionHash: string;
   managerToken: Token;
-  rewardPoolToken: Token | undefined;
+  rewardPoolTokens: Token[];
   token0ToUsd: Decimal;
   token1ToUsd: Decimal;
   manager: BalanceDelta;
-  rewardPool: BalanceDelta | undefined;
+  rewardPool: BalanceDelta;
   total: BalanceDelta;
   underlying0: BalanceDelta;
   underlying1: BalanceDelta;
@@ -60,7 +60,7 @@ const mergeBalanceDelta = <T extends BalanceDelta>(prev: T, next: T): T => {
 const mergeClmPositionInteractions = (
   chain: ChainId,
   managerToken: Token,
-  rewardPoolToken: Token | undefined,
+  rewardPoolTokens: Token[],
   token0: Token,
   token1: Token,
   interactions: InvestorTimelineClmPositionInteractionFragment[]
@@ -76,15 +76,21 @@ const mergeClmPositionInteractions = (
         balance: interpretAsDecimal(interaction.managerBalance, managerToken.decimals),
         delta: interpretAsDecimal(interaction.managerBalanceDelta, managerToken.decimals),
       };
-      const rewardPool: BalanceDelta | undefined = rewardPoolToken
-        ? {
-            balance: interpretAsDecimal(interaction.rewardPoolBalance, managerToken.decimals),
-            delta: interpretAsDecimal(interaction.rewardPoolBalanceDelta, managerToken.decimals),
-          }
-        : undefined;
+      const rewardPools: BalanceDelta[] = rewardPoolTokens.map((rewardPoolToken, i) => ({
+        balance: interpretAsDecimal(
+          interaction.rewardPoolBalances[i] || '0',
+          rewardPoolToken.decimals
+        ),
+        delta: interpretAsDecimal(
+          interaction.rewardPoolBalancesDelta[i] || '0',
+          rewardPoolToken.decimals
+        ),
+      }));
       const total: BalanceDelta = {
         balance: interpretAsDecimal(interaction.totalBalance, managerToken.decimals),
-        delta: rewardPool ? manager.delta.add(rewardPool.delta) : manager.delta,
+        delta: manager.delta.add(
+          rewardPools.reduce((acc, rp) => acc.add(rp.delta), new Decimal(0))
+        ),
       };
       const underlying0: BalanceDelta = {
         balance: interpretAsDecimal(interaction.underlyingBalance0, token0.decimals),
@@ -103,10 +109,10 @@ const mergeClmPositionInteractions = (
       const existingTx = acc[txHash];
       if (existingTx) {
         const mergedManaged = mergeBalanceDelta(existingTx.manager, manager);
-        const mergedRewardPool =
-          existingTx.rewardPool && rewardPool
-            ? mergeBalanceDelta(existingTx.rewardPool, rewardPool)
-            : rewardPool;
+        const mergedRewardPool = rewardPools.reduce(
+          (acc, rp) => mergeBalanceDelta(acc, rp),
+          existingTx.rewardPool
+        );
         const mergedUnderlying0 = mergeBalanceDelta(existingTx.underlying0, underlying0);
         const mergedUnderlying1 = mergeBalanceDelta(existingTx.underlying1, underlying1);
 
@@ -114,12 +120,7 @@ const mergeClmPositionInteractions = (
           ...existingTx,
           manager: mergedManaged,
           rewardPool: mergedRewardPool,
-          total: {
-            balance: total.balance,
-            delta: mergedRewardPool
-              ? mergedManaged.delta.add(mergedRewardPool.delta)
-              : mergedManaged.delta,
-          },
+          total: total,
           underlying0: mergedUnderlying0,
           underlying1: mergedUnderlying1,
           usd: {
@@ -136,11 +137,14 @@ const mergeClmPositionInteractions = (
           chain,
           transactionHash: txHash,
           managerToken,
-          rewardPoolToken,
+          rewardPoolTokens,
           token0ToUsd,
           token1ToUsd,
           manager,
-          rewardPool,
+          rewardPool: rewardPools.reduce((acc, rp) => mergeBalanceDelta(acc, rp), {
+            balance: new Decimal(0),
+            delta: new Decimal(0),
+          }),
           total,
           underlying0,
           underlying1,
@@ -173,7 +177,7 @@ const clmPositionToInteractions = (
   interactions: InvestorTimelineClmPositionInteractionFragment[]
 ): TimelineClmInteraction[] => {
   const managerToken = toToken(position.managerToken);
-  const rewardPoolToken = toToken(position.rewardPoolToken);
+  const rewardPoolTokens = position.rewardPoolTokens.map(toToken).filter(Boolean) as Token[];
   const token0 = toToken(position.underlyingToken0);
   const token1 = toToken(position.underlyingToken1);
   if (!managerToken || !token0 || !token1) {
@@ -184,7 +188,7 @@ const clmPositionToInteractions = (
   return mergeClmPositionInteractions(
     chainId,
     managerToken,
-    rewardPoolToken,
+    rewardPoolTokens,
     token0,
     token1,
     interactions

@@ -1,6 +1,5 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
-
-const SUBGRAPH_TAG = process.env.SUBGRAPH_TAG || 'latest';
+import { SUBGRAPH_TAG } from '../../config/env';
 
 const config: CodegenConfig = {
   schema: `https://api.goldsky.com/api/public/project_clu2walwem1qm01w40v3yhw1f/subgraphs/beefy-clm-arbitrum/${SUBGRAPH_TAG}/gn`,
