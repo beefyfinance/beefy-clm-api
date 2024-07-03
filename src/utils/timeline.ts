@@ -58,6 +58,14 @@ const mergeBalanceDelta = <T extends BalanceDelta>(prev: T, next: T): T => {
   };
 };
 
+const sumBalanceDelta = <T extends BalanceDelta>(prev: T, next: T): T => {
+  return {
+    ...next,
+    balance: prev.balance.add(next.balance),
+    delta: prev.delta.add(next.delta),
+  };
+};
+
 /** Merge ClmPositionInteractions that share the same tx hash */
 const mergeClmPositionInteractions = (
   chain: ChainId,
@@ -88,11 +96,13 @@ const mergeClmPositionInteractions = (
           rewardPoolToken.decimals
         ),
       }));
+      const rewardPoolTotal: BalanceDelta = rewardPools.reduce(sumBalanceDelta, {
+        balance: new Decimal(0),
+        delta: new Decimal(0),
+      });
       const total: BalanceDelta = {
         balance: interpretAsDecimal(interaction.totalBalance, managerToken.decimals),
-        delta: manager.delta.add(
-          rewardPools.reduce((acc, rp) => acc.add(rp.delta), new Decimal(0))
-        ),
+        delta: manager.delta.add(rewardPoolTotal.delta),
       };
       const underlying0: BalanceDelta = {
         balance: interpretAsDecimal(interaction.underlyingBalance0, token0.decimals),
@@ -111,21 +121,23 @@ const mergeClmPositionInteractions = (
       const existingTx = acc[txHash];
       if (existingTx) {
         const mergedManaged = mergeBalanceDelta(existingTx.manager, manager);
-        const mergedRewardPool = rewardPools.reduce(
-          (acc, rp) => mergeBalanceDelta(acc, rp),
-          existingTx.rewardPoolTotal
+        const mergedRewardPools = rewardPools.map((rp, i) =>
+          existingTx.rewardPools[i] ? mergeBalanceDelta(existingTx.rewardPools[i], rp) : rp
+        );
+        const mergedRewardPoolTotal = mergeBalanceDelta(
+          existingTx.rewardPoolTotal,
+          rewardPoolTotal
         );
         const mergedUnderlying0 = mergeBalanceDelta(existingTx.underlying0, underlying0);
         const mergedUnderlying1 = mergeBalanceDelta(existingTx.underlying1, underlying1);
+        const mergedTotal = mergeBalanceDelta(existingTx.total, total);
 
         acc[txHash] = {
           ...existingTx,
           manager: mergedManaged,
-          rewardPools: rewardPools.map((rp, i) =>
-            existingTx.rewardPools[i] ? mergeBalanceDelta(existingTx.rewardPools[i], rp) : rp
-          ),
-          rewardPoolTotal: mergedRewardPool,
-          total: total,
+          rewardPools: mergedRewardPools,
+          rewardPoolTotal: mergedRewardPoolTotal,
+          total: mergedTotal,
           underlying0: mergedUnderlying0,
           underlying1: mergedUnderlying1,
           usd: {
@@ -147,10 +159,7 @@ const mergeClmPositionInteractions = (
           token1ToUsd,
           manager,
           rewardPools,
-          rewardPoolTotal: rewardPools.reduce((acc, rp) => mergeBalanceDelta(acc, rp), {
-            balance: new Decimal(0),
-            delta: new Decimal(0),
-          }),
+          rewardPoolTotal,
           total,
           underlying0,
           underlying1,
