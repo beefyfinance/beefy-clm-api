@@ -11,6 +11,7 @@
     "build": "tsc",
     "start": "node build/index.js",
     "inspect": "node --inspect build/index.js",
+    "deploy": "git checkout prod && git rebase main && git push && git checkout -",
     "dev": "ts-node-dev --respawn --require=dotenv/config src/index.ts",
     "format": "biome check src/**/*.{ts,graphql}",
     "format:fix": "biome check --write --unsafe src/**/*.{ts,graphql}",
