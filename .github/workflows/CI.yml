@@ -23,6 +23,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Subgraph tag
+        run: echo "${SUBGRAPH_TAG}"
+
       - name: Checkout code
         uses: actions/checkout@v2
 
