@@ -3,15 +3,22 @@ name: CI
 on:
   push:
     branches:
+      - main
       - prod
   pull_request:
+    branches:
+      - main
+      - prod
 
 jobs:
   test:
+    env:
+      SUBGRAPH_TAG: ${{ ((github.event_name == 'pull_request' && github.base_ref == 'refs/heads/main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && 'next' || 'latest' }}
+
     strategy:
       matrix:
-        node: ['20.x', '21.x']
-        os: [ubuntu-latest]
+        node: [ '20.x', '21.x' ]
+        os: [ ubuntu-latest ]
 
     runs-on: ${{ matrix.os }}
 
