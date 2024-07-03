@@ -41,7 +41,8 @@ type TimelineClmInteraction = {
   token0ToUsd: Decimal;
   token1ToUsd: Decimal;
   manager: BalanceDelta;
-  rewardPool: BalanceDelta;
+  rewardPools: BalanceDelta[];
+  rewardPoolTotal: BalanceDelta;
   total: BalanceDelta;
   underlying0: BalanceDelta;
   underlying1: BalanceDelta;
@@ -111,7 +112,7 @@ const mergeClmPositionInteractions = (
         const mergedManaged = mergeBalanceDelta(existingTx.manager, manager);
         const mergedRewardPool = rewardPools.reduce(
           (acc, rp) => mergeBalanceDelta(acc, rp),
-          existingTx.rewardPool
+          existingTx.rewardPoolTotal
         );
         const mergedUnderlying0 = mergeBalanceDelta(existingTx.underlying0, underlying0);
         const mergedUnderlying1 = mergeBalanceDelta(existingTx.underlying1, underlying1);
@@ -119,7 +120,10 @@ const mergeClmPositionInteractions = (
         acc[txHash] = {
           ...existingTx,
           manager: mergedManaged,
-          rewardPool: mergedRewardPool,
+          rewardPools: rewardPools.map((rp, i) =>
+            existingTx.rewardPools[i] ? mergeBalanceDelta(existingTx.rewardPools[i], rp) : rp
+          ),
+          rewardPoolTotal: mergedRewardPool,
           total: total,
           underlying0: mergedUnderlying0,
           underlying1: mergedUnderlying1,
@@ -141,7 +145,8 @@ const mergeClmPositionInteractions = (
           token0ToUsd,
           token1ToUsd,
           manager,
-          rewardPool: rewardPools.reduce((acc, rp) => mergeBalanceDelta(acc, rp), {
+          rewardPools,
+          rewardPoolTotal: rewardPools.reduce((acc, rp) => mergeBalanceDelta(acc, rp), {
             balance: new Decimal(0),
             delta: new Decimal(0),
           }),

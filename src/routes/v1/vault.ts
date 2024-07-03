@@ -453,7 +453,7 @@ const getVaultInvestors = async (
     const positionBalanceUsd = positionBalance0Usd.add(positionBalance1Usd);
     return {
       investor_address: position.investor.userAddress,
-      total_shares_balance: positionShareBalance.toFixed(10),
+      total_shares_balance: positionShareBalance.toFixed(30),
       underlying_balance0: positionBalance0.toFixed(10),
       underlying_balance1: positionBalance1.toFixed(10),
       usd_balance0: positionBalance0Usd.toFixed(10),

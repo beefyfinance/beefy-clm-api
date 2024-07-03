@@ -49,7 +49,7 @@ export default async function (
   done();
 }
 
-const clmInteractionLegacySchema = Type.Object({
+const timelineClmInteractionOutputSchema = Type.Object({
   datetime: Type.String(),
   product_key: Type.String(),
   display_name: Type.String(),
@@ -72,47 +72,33 @@ const clmInteractionLegacySchema = Type.Object({
 
   usd_balance: bigDecimalSchema,
   usd_diff: bigDecimalSchema,
-});
 
-const clmInteractionRewardPoolSchema = Type.Object({
-  reward_pool_address: addressSchema,
-  reward_pool_balance: bigDecimalSchema,
-  reward_pool_diff: bigDecimalSchema,
-});
-type ClmInteractionRewardPool = Static<typeof clmInteractionRewardPoolSchema>;
-
-const clmInteractionManagerSchema = Type.Object({
+  // manager fields
   manager_address: addressSchema,
   manager_balance: bigDecimalSchema,
   manager_diff: bigDecimalSchema,
   actions: Type.Array(actionsEnumSchema),
-});
 
-const clmInteractionBaseSchema = Type.Intersect([
-  clmInteractionLegacySchema,
-  clmInteractionManagerSchema,
-]);
-const timelineClmInteractionOutputSchema = Type.Union([
-  clmInteractionBaseSchema,
-  Type.Intersect([clmInteractionBaseSchema, clmInteractionRewardPoolSchema]),
-]);
+  // reward pool fields
+  reward_pool_total: Type.Object({
+    reward_pool_balance: bigDecimalSchema,
+    reward_pool_diff: bigDecimalSchema,
+  }),
+  reward_pool_details: Type.Array(
+    Type.Object({
+      reward_pool_address: addressSchema,
+      reward_pool_balance: bigDecimalSchema,
+      reward_pool_diff: bigDecimalSchema,
+    })
+  ),
+});
 type TimelineClmInteractionOutput = Static<typeof timelineClmInteractionOutputSchema>;
 
 async function getTimeline(investor_address: Address): Promise<TimelineClmInteractionOutput[]> {
   const timeline = await getClmTimeline(investor_address);
 
   return timeline.map((interaction): TimelineClmInteractionOutput => {
-    const { rewardPoolTokens, rewardPool } = interaction;
-    const hasRewardPool = rewardPoolTokens.length > 0;
-
-    // ensure we don't include partial reward pool data
-    const rewardPoolFields: ClmInteractionRewardPool | undefined = hasRewardPool
-      ? {
-          reward_pool_address: rewardPoolTokens.map(t => t.address).join(','), // multiple reward pools
-          reward_pool_balance: rewardPool.balance.toString(),
-          reward_pool_diff: rewardPool.delta.toString(),
-        }
-      : undefined;
+    const { rewardPoolTokens, rewardPoolTotal, rewardPools } = interaction;
 
     return {
       datetime: interaction.datetime.toISOString(),
@@ -123,29 +109,35 @@ async function getTimeline(investor_address: Address): Promise<TimelineClmIntera
       is_dashboard_eol: false,
       transaction_hash: interaction.transactionHash,
 
-      token0_to_usd: interaction.token0ToUsd.toString(),
-      token1_to_usd: interaction.token1ToUsd.toString(),
-
       // legacy: share -> total
       share_balance: interaction.total.balance.toString(),
       share_diff: interaction.total.delta.toString(),
 
-      manager_address: interaction.managerToken.address,
-      manager_balance: interaction.manager.balance.toString(),
-      manager_diff: interaction.manager.delta.toString(),
-
-      ...rewardPoolFields,
-
+      token0_to_usd: interaction.token0ToUsd.toString(),
       underlying0_balance: interaction.underlying0.balance.toString(),
       underlying0_diff: interaction.underlying0.delta.toString(),
 
+      token1_to_usd: interaction.token1ToUsd.toString(),
       underlying1_balance: interaction.underlying1.balance.toString(),
       underlying1_diff: interaction.underlying1.delta.toString(),
 
       usd_balance: interaction.usd.balance.toString(),
       usd_diff: interaction.usd.delta.toString(),
 
+      manager_address: interaction.managerToken.address,
+      manager_balance: interaction.manager.balance.toString(),
+      manager_diff: interaction.manager.delta.toString(),
       actions: interaction.actions,
+
+      reward_pool_total: {
+        reward_pool_balance: rewardPoolTotal.balance.toString(),
+        reward_pool_diff: rewardPoolTotal.delta.toString(),
+      },
+      reward_pool_details: rewardPools.map((rewardPool, i) => ({
+        reward_pool_address: rewardPoolTokens[i].address,
+        reward_pool_balance: rewardPool.balance.toString(),
+        reward_pool_diff: rewardPool.delta.toString(),
+      })),
     };
   });
 }
