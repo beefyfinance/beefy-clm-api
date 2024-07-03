@@ -2,13 +2,13 @@ import { type Static, Type } from '@sinclair/typebox';
 import { GraphQLClient } from 'graphql-request';
 import { isArray } from 'lodash';
 import { type ChainId, allChainIds, chainIdSchema } from '../config/chains';
+import { SUBGRAPH_TAG } from '../config/env';
 import { type Sdk, getSdk } from '../queries/codegen/sdk';
 import { withTimeout } from './async';
 import { GraphQueryError } from './error';
 import { createCachedFactoryByChainId } from './factory';
 import { getLoggerFor } from './log';
 
-const SUBGRAPH_TAG = process.env.SUBGRAPH_TAG || 'latest';
 const logger = getLoggerFor('sdk');
 
 // adds the context to the response on all sdk queries

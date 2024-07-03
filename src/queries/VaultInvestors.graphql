@@ -23,7 +23,7 @@ query VaultInvestors($clmAddress: String!, $first: Int! = 1000, $skip: Int! = 0)
       underlyingToken1 {
         ...Token
       }
-      rewardPoolToken {
+      rewardPoolTokens {
         ...Token
       }
       managerTotalSupply
@@ -41,7 +41,7 @@ query VaultInvestors($clmAddress: String!, $first: Int! = 1000, $skip: Int! = 0)
       userAddress: id
     }
     managerBalance
-    rewardPoolBalance
+    rewardPoolBalances
     totalBalance
   }
 }

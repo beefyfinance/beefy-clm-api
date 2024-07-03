@@ -9,7 +9,7 @@ fragment InvestorTimelineClmPosition on CLM {
   managerToken {
     ...InvestorTimelineToken
   }
-  rewardPoolToken {
+  rewardPoolTokens {
     ...InvestorTimelineToken
   }
   underlyingToken0 {
@@ -19,7 +19,7 @@ fragment InvestorTimelineClmPosition on CLM {
     ...InvestorTimelineToken
   }
   managerTotalSupply
-  rewardPoolTotalSupply
+  rewardPoolsTotalSupply
   token0ToNativePrice
   token1ToNativePrice
   nativeToUSDPrice
@@ -36,8 +36,8 @@ fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   totalBalance
   managerBalance
   managerBalanceDelta
-  rewardPoolBalance
-  rewardPoolBalanceDelta
+  rewardPoolBalances
+  rewardPoolBalancesDelta
   underlyingBalance0
   underlyingBalance0Delta
   underlyingBalance1
@@ -53,7 +53,7 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
     id
     
     managerBalance
-    rewardPoolBalance
+    rewardPoolBalances
     totalBalance
     clm {
       ...InvestorTimelineClmPosition
