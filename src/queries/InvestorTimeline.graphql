@@ -1,22 +1,24 @@
-fragment InvestorTimelineToken on Token {
+fragment Token on Token {
   address: id
-  decimals
   name
+  symbol
+  decimals
 }
 
 fragment InvestorTimelineClmPosition on CLM {
   address: id
   managerToken {
-    ...InvestorTimelineToken
+    ...Token
   }
   rewardPoolTokens {
-    ...InvestorTimelineToken
+    ...Token
   }
+  rewardPoolTokensOrder
   underlyingToken0 {
-    ...InvestorTimelineToken
+    ...Token
   }
   underlyingToken1 {
-    ...InvestorTimelineToken
+    ...Token
   }
   managerTotalSupply
   rewardPoolsTotalSupply

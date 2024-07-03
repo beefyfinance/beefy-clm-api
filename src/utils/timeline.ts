@@ -6,11 +6,12 @@ import {
   ClmPositionInteractionType,
   type InvestorTimelineClmPositionFragment,
   type InvestorTimelineClmPositionInteractionFragment,
-  type InvestorTimelineTokenFragment,
+  type TokenFragment,
 } from '../queries/codegen/sdk';
 import { ZERO_ADDRESS } from './address';
 import { fromUnixTime } from './date';
 import { interpretAsDecimal } from './decimal';
+import { sortEntitiesByOrderList } from './entity-order';
 import { getLoggerFor } from './log';
 import type { Address } from './scalar-types';
 import { executeOnAllSdks, paginate } from './sdk';
@@ -166,7 +167,7 @@ const mergeClmPositionInteractions = (
   return Object.values(mergedByTxId);
 };
 
-function toToken(from: InvestorTimelineTokenFragment | undefined): Token | undefined {
+function toToken(from: TokenFragment | undefined): Token | undefined {
   return from?.address && from.address !== ZERO_ADDRESS
     ? {
         address: from.address,
@@ -182,7 +183,12 @@ const clmPositionToInteractions = (
   interactions: InvestorTimelineClmPositionInteractionFragment[]
 ): TimelineClmInteraction[] => {
   const managerToken = toToken(position.managerToken);
-  const rewardPoolTokens = position.rewardPoolTokens.map(toToken).filter(Boolean) as Token[];
+  const orderedRewardPoolTokenAddresses = sortEntitiesByOrderList(
+    position.rewardPoolTokens,
+    'address',
+    position.rewardPoolTokensOrder
+  );
+  const rewardPoolTokens = orderedRewardPoolTokenAddresses.map(toToken).filter(Boolean) as Token[];
   const token0 = toToken(position.underlyingToken0);
   const token1 = toToken(position.underlyingToken1);
   if (!managerToken || !token0 || !token1) {
