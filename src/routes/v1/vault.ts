@@ -258,6 +258,7 @@ export const vaultHarvestSchema = Type.Object({
   token0ToUsd: setOpts(bigDecimalSchema, { description: 'The price of token0 in USD' }),
   token1ToUsd: setOpts(bigDecimalSchema, { description: 'The price of token1 in USD' }),
   totalSupply: setOpts(bigDecimalSchema, { description: 'The total supply of the vault' }),
+  transactionHash: Type.String({ description: 'Transaction hash of the harvest' }),
 });
 export type VaultHarvest = Static<typeof vaultHarvestSchema>;
 const vaultHarvestsSchema = Type.Array(vaultHarvestSchema);
@@ -307,6 +308,7 @@ export function prepareVaultHarvests(vault: {
       token0ToUsd: token0ToNativePrice.mul(nativeToUsd).toString(),
       token1ToUsd: token1ToNativePrice.mul(nativeToUsd).toString(),
       totalSupply: totalSupply.toString(),
+      transactionHash: harvest.createdWith.id,
     };
   });
 }

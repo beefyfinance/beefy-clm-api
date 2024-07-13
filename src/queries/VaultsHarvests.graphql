@@ -6,6 +6,9 @@ fragment HarvestData on ClmHarvestEvent {
   token1ToNativePrice
   nativeToUSDPrice
   totalSupply: managerTotalSupply
+  createdWith {
+    id
+  }
 }
 
 query VaultsHarvests($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
