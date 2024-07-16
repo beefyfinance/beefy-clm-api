@@ -10,6 +10,7 @@ export enum ChainId {
   polygon = 'polygon',
   zksync = 'zksync',
   manta = 'manta',
+  mantle = 'mantle',
 }
 
 export const allChainIds: Array<ChainId> = Object.values(ChainId);
