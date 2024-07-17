@@ -29,7 +29,6 @@ fragment InvestorTimelineClmPosition on CLM {
 
 fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   id
-  
   timestamp
   blockNumber
   createdWith {
@@ -50,10 +49,46 @@ fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   type
 }
 
+fragment InvestorTimelineClassicPosition on Classic {
+  address: id
+  rewardPoolTokens {
+    ...Token
+  }
+  rewardPoolTokensOrder
+  rewardPoolsTotalSupply
+  vaultSharesToken {
+    ...Token
+  }
+  vaultSharesTotalSupply
+  underlyingToken {
+    ...Token
+  }
+  underlyingAmount
+  underlyingToNativePrice
+}
+
+fragment InvestorTimelineClassicPositionInteraction on ClassicPositionInteraction {
+  id
+  timestamp
+  blockNumber
+  createdWith {
+    hash: id
+  }
+  rewardPoolBalances
+  rewardPoolBalancesDelta
+  vaultBalance
+  vaultBalanceDelta
+  boostBalance
+  boostBalanceDelta
+  totalBalance
+  underlyingToNativePrice
+  nativeToUSDPrice
+  type
+}
+
 query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
   clmPositions(skip: $skip, first: $first, where: { investor: $investor_address, totalBalance_gt: 0 }) {
     id
-    
     managerBalance
     rewardPoolBalances
     totalBalance
@@ -61,19 +96,43 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
       ...InvestorTimelineClmPosition
     }
   }
-  
+
   clmPositionInteractions(
-      first: $first
-      skip: $skip
-      orderBy: timestamp
-      orderDirection: asc
-      where: {
-        investor: $investor_address,
-        type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, REWARD_POOL_STAKE, REWARD_POOL_UNSTAKE]
-      }
+    first: $first
+    skip: $skip
+    orderBy: timestamp
+    orderDirection: asc
+    where: {
+      investor: $investor_address,
+      type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, REWARD_POOL_STAKE, REWARD_POOL_UNSTAKE]
+    }
   ) {
     ...InvestorTimelineClmPositionInteraction
-    
+    investorPosition {
+      id
+    }
+  }
+
+  classicPositions(skip: $skip, first: $first, where: { investor: $investor_address, totalBalance_gt: 0 }) {
+    id
+    vaultBalance
+    rewardPoolBalances
+    boostBalance
+    totalBalance
+    classic {
+      ...InvestorTimelineClassicPosition
+    }
+  }
+
+  classicPositionInteractions(first: $first
+    skip: $skip
+    orderBy: timestamp
+    orderDirection: asc
+    where: {
+      investor: $investor_address,
+      type_in: [VAULT_DEPOSIT, VAULT_WITHDRAW, BOOST_STAKE, BOOST_UNSTAKE, REWARD_POOL_STAKE, REWARD_POOL_UNSTAKE]
+    }) {
+    ...InvestorTimelineClassicPositionInteraction
     investorPosition {
       id
     }
