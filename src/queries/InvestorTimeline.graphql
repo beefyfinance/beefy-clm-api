@@ -69,7 +69,7 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
       orderDirection: asc
       where: {
         investor: $investor_address,
-        type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, REWARD_POOL_STAKE, REWARD_POOL_UNSTAKE]
+        type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, CLM_REWARD_POOL_STAKE, CLM_REWARD_POOL_UNSTAKE]
       }
   ) {
     ...InvestorTimelineClmPositionInteraction
