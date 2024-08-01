@@ -11,6 +11,7 @@ export enum ChainId {
   zksync = 'zksync',
   manta = 'manta',
   mantle = 'mantle',
+  sei = 'sei',
 }
 
 export const allChainIds: Array<ChainId> = Object.values(ChainId);
