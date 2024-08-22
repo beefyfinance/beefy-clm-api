@@ -116,7 +116,7 @@ const mergeClmPositionInteractions = (
         }
         return {
           address: token!.address,
-          decimals: parseInt(token!.decimals),
+          decimals: Number.parseInt(token!.decimals),
         };
       });
       const rewardBalancesDelta: Decimal[] = interaction.rewardBalancesDelta.map((rewardDelta, i) =>
