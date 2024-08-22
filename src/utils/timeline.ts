@@ -166,6 +166,7 @@ const mergeClmPositionInteractions = (
                 ).plus(balanceDelta)
               )
             : existingTx.rewardBalancesDelta;
+        // reward to usd pricing won't change in a single tx, we can take either
         const mergedRewardsToUsd =
           rewardBalancesDelta.length > 0 ? rewardsToUsd : existingTx.rewardsToUsd;
         const mergedClaimedRewardPool =
