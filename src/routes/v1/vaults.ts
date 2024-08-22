@@ -14,10 +14,10 @@ import type { Address, Hex } from '../../utils/scalar-types';
 import { getSdksForChain, paginate } from '../../utils/sdk';
 import { setOpts } from '../../utils/typebox';
 import {
-  prepareClmHarvests,
-  clmHarvestSchema,
   classicHarvestSchema,
+  clmHarvestSchema,
   prepareClassicHarvests,
+  prepareClmHarvests,
 } from './vault';
 
 export default async function (

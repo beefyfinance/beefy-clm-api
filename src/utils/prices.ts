@@ -1,14 +1,14 @@
-import {
+import { type Static, Type } from '@sinclair/typebox';
+import type {
   ClassicPriceDataFragment,
   ClassicSnapshotDataFragment,
   ClmPriceDataFragment,
   ClmSnapshotDataFragment,
 } from '../queries/codegen/sdk';
-import { type Static, Type } from '@sinclair/typebox';
-import { bigDecimalSchema, timestampNumberSchema } from '../schema/bigint';
 import { addressSchema } from '../schema/address';
+import { bigDecimalSchema, timestampNumberSchema } from '../schema/bigint';
 import { interpretAsDecimal } from './decimal';
-import { Token } from './timeline';
+import type { Token } from './timeline';
 
 export const clmHistoricPricesSchema = Type.Object({
   type: Type.Literal('clm'),

@@ -6,11 +6,11 @@ import { bigDecimalSchema } from '../../schema/bigint';
 import { getAsyncCache } from '../../utils/async-lock';
 import type { Address, Hex } from '../../utils/scalar-types';
 import {
+  type TimelineClassicInteraction,
+  type TimelineClmInteraction,
   classicActionsEnumSchema,
   clmActionsEnumSchema,
   getInvestorTimeline,
-  TimelineClassicInteraction,
-  TimelineClmInteraction,
 } from '../../utils/timeline';
 
 export default async function (
@@ -252,9 +252,10 @@ async function getTimeline(investor_address: Address): Promise<TimelineAnyIntera
   return timeline.map((interaction): TimelineAnyInteractionOutput => {
     if (interaction.type === 'clm') {
       return clmInteractionToOutput(interaction);
-    } else if (interaction.type === 'classic') {
+    }
+    if (interaction.type === 'classic') {
       return classicInteractionToOutput(interaction);
     }
-    throw new Error(`Unknown interaction type`);
+    throw new Error('Unknown interaction type');
   });
 }

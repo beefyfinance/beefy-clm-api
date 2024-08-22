@@ -1,23 +1,23 @@
-import { Enum, Static } from '@sinclair/typebox';
+import { Enum, type Static } from '@sinclair/typebox';
 import Decimal from 'decimal.js';
 import { groupBy, keyBy } from 'lodash';
 import type { ChainId } from '../config/chains';
 import {
   ClassicPositionInteractionType,
   ClmPositionInteractionType,
-  InvestorTimelineClassicPositionFragment,
-  InvestorTimelineClassicPositionInteractionFragment,
+  type InvestorTimelineClassicPositionFragment,
+  type InvestorTimelineClassicPositionInteractionFragment,
   type InvestorTimelineClmPositionFragment,
   type InvestorTimelineClmPositionInteractionFragment,
-  InvestorTimelineQuery,
+  type InvestorTimelineQuery,
 } from '../queries/codegen/sdk';
+import { isDefined } from './array';
 import { fromUnixTime } from './date';
 import { interpretAsDecimal } from './decimal';
 import { sortEntitiesByOrderList } from './entity-order';
 import { getLoggerFor } from './log';
 import type { Address } from './scalar-types';
-import { executeOnAllSdks, paginate, type PaginatedAllSdkResult } from './sdk';
-import { isDefined } from './array';
+import { type PaginatedAllSdkResult, executeOnAllSdks, paginate } from './sdk';
 import { toToken } from './tokens';
 
 const logger = getLoggerFor('timeline');

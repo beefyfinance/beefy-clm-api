@@ -1,5 +1,16 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.8.2/schema.json",
+  "files": {
+    "ignore": [
+      "./.husky/**",
+      "./.idea/**",
+      "./.vscode/**",
+      "./build/**",
+      "./node_modules/**",
+      "./src/queries/codegen/sdk.ts",
+      "./src/queries/codegen/schema.graphql"
+    ]
+  },
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
@@ -7,35 +18,19 @@
     "indentWidth": 2,
     "lineEnding": "lf",
     "lineWidth": 100,
-    "attributePosition": "auto",
-    "ignore": [
-      "./.husky/**",
-      "./build/**",
-      "./node_modules/**",
-      "src/queries/codegen/sdk.ts",
-      "src/queries/codegen/schema.graphql"
-    ]
+    "attributePosition": "auto"
   },
   "organizeImports": {
-    "enabled": true,
-    "ignore": [
-      "./.husky/**",
-      "./build/**",
-      "./node_modules/**",
-      "src/queries/codegen/sdk.ts",
-      "src/queries/codegen/schema.graphql"
-    ]
+    "enabled": true
   },
   "linter": {
     "enabled": true,
-    "ignore": [
-      "./.husky/**",
-      "./build/**",
-      "./node_modules/**",
-      "src/queries/codegen/sdk.ts",
-      "src/queries/codegen/schema.graphql"
-    ],
-    "rules": { "recommended": true }
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noForEach": "off"
+      }
+    }
   },
   "javascript": {
     "formatter": {
