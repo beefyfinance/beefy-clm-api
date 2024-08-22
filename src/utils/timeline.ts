@@ -44,11 +44,17 @@ type TimelineClmInteraction = {
   manager: BalanceDelta;
   rewardPools: BalanceDelta[];
   rewardPoolTotal: BalanceDelta;
+  rewardBalancesDelta: Decimal[];
+  claimedRewardPool: string | null;
+  rewardsToUsd: Decimal[];
   total: BalanceDelta;
   underlying0: BalanceDelta;
   underlying1: BalanceDelta;
   usd: BalanceDelta;
   actions: ActionsEnum[];
+  clm: {
+    rewardTokens: Array<string>;
+  };
 };
 
 const mergeBalanceDelta = <T extends BalanceDelta>(prev: T, next: T): T => {
@@ -100,6 +106,25 @@ const mergeClmPositionInteractions = (
         balance: new Decimal(0),
         delta: new Decimal(0),
       });
+
+      const rewardTokens = interaction.clm.rewardTokensOrder.map(address => {
+        const token = interaction.clm.rewardTokens.find(
+          t => t.address.toLowerCase() === address.toLowerCase()
+        );
+        if (!token) {
+          throw new Error(`Missing reward token ${address}`);
+        }
+        return {
+          address: token!.address,
+          decimals: parseInt(token!.decimals),
+        };
+      });
+      const rewardBalancesDelta: Decimal[] = interaction.rewardBalancesDelta.map((rewardDelta, i) =>
+        interpretAsDecimal(rewardDelta, rewardTokens[i].decimals)
+      );
+      const rewardsToUsd: Decimal[] = interaction.rewardToNativePrices.map(rewardToNativePrice =>
+        interpretAsDecimal(rewardToNativePrice, 18).mul(nativeToUsd)
+      );
       const total: BalanceDelta = {
         balance: interpretAsDecimal(interaction.totalBalance, managerToken.decimals),
         delta: manager.delta.add(rewardPoolTotal.delta),
@@ -132,6 +157,21 @@ const mergeClmPositionInteractions = (
         const mergedUnderlying1 = mergeBalanceDelta(existingTx.underlying1, underlying1);
         const mergedTotal = mergeBalanceDelta(existingTx.total, total);
 
+        const mergedRewardBalancesDelta =
+          rewardBalancesDelta.length > 0
+            ? rewardBalancesDelta.map((balanceDelta, i) =>
+                (existingTx.rewardBalancesDelta.length > 0
+                  ? existingTx.rewardBalancesDelta[i]
+                  : new Decimal(0)
+                ).plus(balanceDelta)
+              )
+            : existingTx.rewardBalancesDelta;
+        const mergedRewardsToUsd =
+          rewardBalancesDelta.length > 0 ? rewardsToUsd : existingTx.rewardsToUsd;
+        const mergedClaimedRewardPool =
+          existingTx.claimedRewardPool ??
+          (interaction.claimedRewardPool ? interaction.claimedRewardPool.id : null);
+
         acc[txHash] = {
           ...existingTx,
           manager: mergedManaged,
@@ -147,6 +187,9 @@ const mergeClmPositionInteractions = (
               .add(mergedUnderlying1.delta.mul(token1ToUsd)),
           },
           actions: [...existingTx.actions, interaction.type],
+          rewardBalancesDelta: mergedRewardBalancesDelta,
+          rewardsToUsd: mergedRewardsToUsd,
+          claimedRewardPool: mergedClaimedRewardPool,
         };
       } else {
         acc[txHash] = {
@@ -160,11 +203,19 @@ const mergeClmPositionInteractions = (
           manager,
           rewardPools,
           rewardPoolTotal,
+          rewardBalancesDelta,
+          claimedRewardPool: interaction.claimedRewardPool
+            ? interaction.claimedRewardPool.id
+            : null,
+          rewardsToUsd,
           total,
           underlying0,
           underlying1,
           usd,
           actions: [interaction.type],
+          clm: {
+            rewardTokens: interaction.clm.rewardTokensOrder,
+          },
         };
       }
 
