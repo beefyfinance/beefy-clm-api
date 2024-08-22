@@ -1,14 +1,24 @@
-fragment HarvestData on ClmHarvestEvent {
+fragment ClmHarvestData on ClmHarvestEvent {
+  id
   timestamp
   compoundedAmount0
   compoundedAmount1
+  nativeToUSDPrice
   token0ToNativePrice
   token1ToNativePrice
-  nativeToUSDPrice
+  underlyingAmount0
+  underlyingAmount1
   totalSupply: managerTotalSupply
-  createdWith {
-    id
-  }
+}
+
+fragment ClassicHarvestData on ClassicHarvestEvent {
+  id
+  timestamp
+  compoundedAmount
+  nativeToUSDPrice
+  underlyingToNativePrice
+  underlyingAmount
+  totalSupply: vaultSharesTotalSupply
 }
 
 query VaultHarvests($vault_address: ID!) {
@@ -23,7 +33,18 @@ query VaultHarvests($vault_address: ID!) {
       decimals
     }
     harvests(orderBy: timestamp, orderDirection: desc, first: 1000) {
-      ...HarvestData
+      ...ClmHarvestData
+    }
+  }
+  classic(id: $vault_address) {
+    underlyingToken {
+      decimals
+    }
+    sharesToken: vaultSharesToken {
+      decimals
+    }
+    harvests(orderBy: timestamp, orderDirection: desc, first: 1000) {
+      ...ClassicHarvestData
     }
   }
 }

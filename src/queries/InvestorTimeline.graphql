@@ -5,7 +5,7 @@ fragment Token on Token {
   decimals
 }
 
-fragment InvestorTimelineClmPosition on CLM {
+fragment InvestorTimelineClmPositionClm on CLM {
   address: id
   managerToken {
     ...Token
@@ -27,9 +27,15 @@ fragment InvestorTimelineClmPosition on CLM {
   nativeToUSDPrice
 }
 
+fragment InvestorTimelineClmPosition on ClmPosition {
+  id
+  clm {
+    ...InvestorTimelineClmPositionClm
+  }
+}
+
 fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   id
-  
   timestamp
   blockNumber
   createdWith {
@@ -50,30 +56,93 @@ fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   type
 }
 
+fragment InvestorTimelineClassicPositionClassic on Classic {
+  address: id
+  rewardPoolTokens {
+    ...Token
+  }
+  rewardPoolTokensOrder
+  rewardPoolsTotalSupply
+  vaultSharesToken {
+    ...Token
+  }
+  vaultSharesTotalSupply
+  underlyingToken {
+    ...Token
+  }
+  underlyingAmount
+  underlyingToNativePrice
+  underlyingBreakdownTokens {
+    ...Token
+  }
+  underlyingBreakdownTokensOrder
+}
+
+fragment InvestorTimelineClassicPosition on ClassicPosition {
+  id
+  classic {
+    ...InvestorTimelineClassicPositionClassic
+  }
+}
+
+fragment InvestorTimelineClassicPositionInteraction on ClassicPositionInteraction {
+  id
+  timestamp
+  blockNumber
+  createdWith {
+    hash: id
+  }
+  rewardPoolBalances
+  rewardPoolBalancesDelta
+  vaultBalance
+  vaultBalanceDelta
+  boostBalance
+  boostBalanceDelta
+  totalBalance
+  vaultSharesTotalSupply
+  vaultUnderlyingAmount
+  vaultUnderlyingBreakdownBalances
+  vaultUnderlyingTotalSupply
+  underlyingBreakdownToNativePrices
+  underlyingToNativePrice
+  nativeToUSDPrice
+  type
+}
+
 query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
   clmPositions(skip: $skip, first: $first, where: { investor: $investor_address, totalBalance_gt: 0 }) {
-    id
-    
-    managerBalance
-    rewardPoolBalances
-    totalBalance
-    clm {
-      ...InvestorTimelineClmPosition
-    }
+    ...InvestorTimelineClmPosition
   }
-  
+
   clmPositionInteractions(
-      first: $first
-      skip: $skip
-      orderBy: timestamp
-      orderDirection: asc
-      where: {
-        investor: $investor_address,
-        type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, CLM_REWARD_POOL_STAKE, CLM_REWARD_POOL_UNSTAKE]
-      }
+    first: $first
+    skip: $skip
+    orderBy: timestamp
+    orderDirection: asc
+    where: {
+      investor: $investor_address,
+      type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, CLM_REWARD_POOL_STAKE, CLM_REWARD_POOL_UNSTAKE]
+    }
   ) {
     ...InvestorTimelineClmPositionInteraction
-    
+    investorPosition {
+      id
+    }
+  }
+
+  classicPositions(skip: $skip, first: $first, where: { investor: $investor_address, totalBalance_gt: 0 }) {
+    ...InvestorTimelineClassicPosition
+  }
+
+  classicPositionInteractions(first: $first
+    skip: $skip
+    orderBy: timestamp
+    orderDirection: asc
+    where: {
+      investor: $investor_address,
+      type_in: [VAULT_DEPOSIT, VAULT_WITHDRAW, CLASSIC_REWARD_POOL_STAKE, CLASSIC_REWARD_POOL_UNSTAKE]
+    }) {
+    ...InvestorTimelineClassicPositionInteraction
     investorPosition {
       id
     }

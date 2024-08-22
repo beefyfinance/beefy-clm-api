@@ -1,16 +1,3 @@
-fragment HarvestData on ClmHarvestEvent {
-  timestamp
-  compoundedAmount0
-  compoundedAmount1
-  token0ToNativePrice
-  token1ToNativePrice
-  nativeToUSDPrice
-  totalSupply: managerTotalSupply
-  createdWith {
-    id
-  }
-}
-
 query VaultsHarvests($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
     vaultAddress: id
@@ -29,7 +16,24 @@ query VaultsHarvests($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
       first: 1000
       where: { timestamp_gte: $since }
     ) {
-      ...HarvestData
+      ...ClmHarvestData
+    }
+  }
+  classics(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    vaultAddress: id
+    underlyingToken {
+      decimals
+    }
+    sharesToken: vaultSharesToken {
+      decimals
+    }
+    harvests(
+      orderBy: timestamp
+      orderDirection: desc
+      first: 1000
+      where: { timestamp_gte: $since }
+    ) {
+      ...ClassicHarvestData
     }
   }
 }

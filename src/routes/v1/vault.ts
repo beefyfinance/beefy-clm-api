@@ -1,20 +1,33 @@
 import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
 import { type ChainId, chainIdSchema } from '../../config/chains';
-import type { HarvestDataFragment, Token } from '../../queries/codegen/sdk';
+import type {
+  ClassicHarvestDataFragment,
+  ClmHarvestDataFragment,
+  Token,
+} from '../../queries/codegen/sdk';
 import { addressSchema } from '../../schema/address';
-import {
-  bigDecimalSchema,
-  bigintSchema,
-  timestampNumberSchema,
-  timestampStrSchema,
-} from '../../schema/bigint';
-import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
+import { bigDecimalSchema, timestampStrSchema } from '../../schema/bigint';
+import { getPeriodSeconds, type Period, periodSchema } from '../../schema/period';
 import { getAsyncCache } from '../../utils/async-lock';
 import { interpretAsDecimal } from '../../utils/decimal';
 import type { Address, Hex } from '../../utils/scalar-types';
 import { getSdksForChain, paginate } from '../../utils/sdk';
 import { setOpts } from '../../utils/typebox';
+import { sortEntitiesByOrderList } from '../../utils/entity-order';
+import { isDefined } from '../../utils/array';
+import { toToken } from '../../utils/tokens';
+import { getLoggerFor } from '../../utils/log';
+import {
+  classicHistoricPricesSchema,
+  clmHistoricPricesSchema,
+  handleClassicPrice,
+  handleClmPrice,
+} from '../../utils/prices';
+import { omit } from 'lodash';
+import { FriendlyError } from '../../utils/error';
+
+const logger = getLoggerFor('vault');
 
 export default async function (
   instance: FastifyInstance,
@@ -220,11 +233,7 @@ export default async function (
   done();
 }
 
-const vaultPriceSchema = Type.Object({
-  min: bigintSchema,
-  current: bigintSchema,
-  max: bigintSchema,
-});
+const vaultPriceSchema = Type.Union([clmHistoricPricesSchema, classicHistoricPricesSchema]);
 type VaultPrice = Static<typeof vaultPriceSchema>;
 
 const getVaultPrice = async (
@@ -239,29 +248,78 @@ const getVaultPrice = async (
     )
   );
 
-  const vault = res.map(r => r.data.clm).find(v => !!v);
-  if (!vault) {
-    return undefined;
+  const timestamp =
+    res
+      .map(r => r.data._meta)
+      .find(v => !!v)
+      ?.block.timestamp?.toString() || '0';
+
+  const clm = res.map(r => r.data.clm).find(v => !!v);
+  if (clm) {
+    return handleClmPrice(clm.sharesToken, clm.underlyingToken0, clm.underlyingToken1, {
+      ...omit(clm, ['sharesToken', 'underlyingToken0', 'underlyingToken1', '__typename']),
+      roundedTimestamp: timestamp,
+    });
   }
 
-  return {
-    min: vault.priceRangeMin1,
-    current: vault.priceOfToken0InToken1,
-    max: vault.priceRangeMax1,
-  };
+  const classic = res.map(r => r.data.classic).find(v => !!v);
+  if (classic) {
+    const { sharesToken, underlyingToken } = classic;
+    const underlyingBreakdownTokens = sortEntitiesByOrderList(
+      classic.underlyingBreakdownTokens,
+      'address',
+      classic.underlyingBreakdownTokensOrder
+    )
+      .map(toToken)
+      .filter(isDefined);
+    if (underlyingBreakdownTokens.length < classic.underlyingBreakdownTokensOrder.length) {
+      throw new FriendlyError(
+        `Missing underlying breakdown tokens for classic ${sharesToken.address}`
+      );
+    }
+
+    return handleClassicPrice(sharesToken, underlyingToken, underlyingBreakdownTokens, {
+      ...omit(classic, [
+        'sharesToken',
+        'underlyingToken',
+        'underlyingBreakdownTokens',
+        '__typename',
+      ]),
+      roundedTimestamp: timestamp,
+    });
+  }
+
+  return undefined;
 };
 
-export const vaultHarvestSchema = Type.Object({
+export const clmHarvestSchema = Type.Object({
+  id: Type.String({ description: 'Id of the harvest event' }),
+  type: Type.Literal('clm'),
   timestamp: setOpts(timestampStrSchema, { description: 'The timestamp of the harvest' }),
   compoundedAmount0: setOpts(bigDecimalSchema, { description: 'The amount of token0 compounded' }),
   compoundedAmount1: setOpts(bigDecimalSchema, { description: 'The amount of token1 compounded' }),
   token0ToUsd: setOpts(bigDecimalSchema, { description: 'The price of token0 in USD' }),
   token1ToUsd: setOpts(bigDecimalSchema, { description: 'The price of token1 in USD' }),
+  totalAmount0: setOpts(bigDecimalSchema, { description: 'The amount of token0 in the vault' }),
+  totalAmount1: setOpts(bigDecimalSchema, { description: 'The amount of token1 in the vault' }),
   totalSupply: setOpts(bigDecimalSchema, { description: 'The total supply of the vault' }),
-  transactionHash: Type.String({ description: 'Transaction hash of the harvest' }),
 });
-export type VaultHarvest = Static<typeof vaultHarvestSchema>;
-const vaultHarvestsSchema = Type.Array(vaultHarvestSchema);
+export const classicHarvestSchema = Type.Object({
+  id: Type.String({ description: 'Id of the harvest event' }),
+  type: Type.Literal('classic'),
+  timestamp: setOpts(timestampStrSchema, { description: 'The timestamp of the harvest' }),
+  compoundedAmount: setOpts(bigDecimalSchema, {
+    description: 'The amount of underlying compounded',
+  }),
+  underlyingToUsd: setOpts(bigDecimalSchema, { description: 'The price of underlying in USD' }),
+  totalUnderlying: setOpts(bigDecimalSchema, {
+    description: 'The total underlying deposited in the vault',
+  }),
+  totalSupply: setOpts(bigDecimalSchema, { description: 'The total supply of the vault' }),
+});
+export type ClmHarvest = Static<typeof clmHarvestSchema>;
+export type ClassicHarvest = Static<typeof classicHarvestSchema>;
+const vaultHarvestsSchema = Type.Array(Type.Union([clmHarvestSchema, classicHarvestSchema]));
 type VaultHarvests = Static<typeof vaultHarvestsSchema>;
 
 const getVaultHarvests = async (chain: ChainId, vault_address: Address): Promise<VaultHarvests> => {
@@ -273,20 +331,55 @@ const getVaultHarvests = async (chain: ChainId, vault_address: Address): Promise
     )
   );
 
-  const vault = res.map(r => r.data.clm).find(v => !!v);
-  if (!vault) {
-    return [];
+  const clm = res.map(r => r.data.clm).find(v => !!v);
+  if (clm) {
+    return prepareClmHarvests(clm);
   }
 
-  return prepareVaultHarvests(vault);
+  const vault = res.map(r => r.data.classic).find(v => !!v);
+  if (vault) {
+    return prepareClassicHarvests(vault);
+  }
+
+  return [];
 };
 
-export function prepareVaultHarvests(vault: {
+export function prepareClassicHarvests(vault: {
+  underlyingToken: Pick<Token, 'decimals'>;
+  sharesToken: Pick<Token, 'decimals'>;
+  harvests: Array<ClassicHarvestDataFragment>;
+}): ClassicHarvest[] {
+  return vault.harvests.map(harvest => {
+    const underlyingToNativePrice = interpretAsDecimal(harvest.underlyingToNativePrice, 18);
+    const nativeToUsd = interpretAsDecimal(harvest.nativeToUSDPrice, 18);
+    const compoundedAmount = interpretAsDecimal(
+      harvest.compoundedAmount,
+      vault.underlyingToken.decimals
+    );
+    const totalUnderlying = interpretAsDecimal(
+      harvest.underlyingAmount,
+      vault.underlyingToken.decimals
+    );
+    const totalSupply = interpretAsDecimal(harvest.totalSupply, vault.sharesToken.decimals);
+
+    return {
+      id: harvest.id,
+      type: 'classic',
+      timestamp: harvest.timestamp,
+      compoundedAmount: compoundedAmount.toString(),
+      underlyingToUsd: underlyingToNativePrice.mul(nativeToUsd).toString(),
+      totalUnderlying: totalUnderlying.toString(),
+      totalSupply: totalSupply.toString(),
+    };
+  });
+}
+
+export function prepareClmHarvests(vault: {
   underlyingToken0: Pick<Token, 'decimals'>;
   underlyingToken1: Pick<Token, 'decimals'>;
   sharesToken: Pick<Token, 'decimals'>;
-  harvests: Array<HarvestDataFragment>;
-}): VaultHarvest[] {
+  harvests: Array<ClmHarvestDataFragment>;
+}): ClmHarvest[] {
   return vault.harvests.map(harvest => {
     const token0ToNativePrice = interpretAsDecimal(harvest.token0ToNativePrice, 18);
     const token1ToNativePrice = interpretAsDecimal(harvest.token1ToNativePrice, 18);
@@ -299,27 +392,33 @@ export function prepareVaultHarvests(vault: {
       harvest.compoundedAmount1,
       vault.underlyingToken1.decimals
     );
+    const totalAmount0 = interpretAsDecimal(
+      harvest.underlyingAmount0,
+      vault.underlyingToken0.decimals
+    );
+    const totalAmount1 = interpretAsDecimal(
+      harvest.underlyingAmount1,
+      vault.underlyingToken1.decimals
+    );
     const totalSupply = interpretAsDecimal(harvest.totalSupply, vault.sharesToken.decimals);
 
     return {
+      id: harvest.id,
+      type: 'clm',
       timestamp: harvest.timestamp,
       compoundedAmount0: compoundedAmount0.toString(),
       compoundedAmount1: compoundedAmount1.toString(),
       token0ToUsd: token0ToNativePrice.mul(nativeToUsd).toString(),
       token1ToUsd: token1ToNativePrice.mul(nativeToUsd).toString(),
+      totalAmount0: totalAmount0.toString(),
+      totalAmount1: totalAmount1.toString(),
       totalSupply: totalSupply.toString(),
-      transactionHash: harvest.createdWith.id,
     };
   });
 }
 
 const vaultHistoricPricesSchema = Type.Array(
-  Type.Object({
-    t: timestampNumberSchema,
-    min: bigDecimalSchema,
-    v: bigDecimalSchema,
-    max: bigDecimalSchema,
-  })
+  Type.Union([clmHistoricPricesSchema, classicHistoricPricesSchema])
 );
 type VaultHistoricPrices = Static<typeof vaultHistoricPricesSchema>;
 
@@ -328,7 +427,7 @@ const getVaultHistoricPrices = async (
   vault_address: Address,
   period: Period,
   since: string
-): Promise<VaultHistoricPrices> => {
+): Promise<VaultHistoricPrices | undefined> => {
   const res = await Promise.all(
     getSdksForChain(chain).map(async sdk =>
       sdk.VaultHistoricPrices({
@@ -339,23 +438,44 @@ const getVaultHistoricPrices = async (
     )
   );
 
-  const vault = res.map(r => r.data.clm).find(v => !!v);
-  if (!vault) {
-    return [];
+  const clm = res.map(r => r.data.clm).find(v => !!v);
+  if (clm) {
+    if (!clm.snapshots?.length) {
+      return [];
+    }
+
+    const { underlyingToken0, underlyingToken1, sharesToken } = clm;
+
+    return clm.snapshots.map(snapshot =>
+      handleClmPrice(sharesToken, underlyingToken0, underlyingToken1, snapshot)
+    );
   }
 
-  if (!vault.snapshots?.length) {
-    return [];
+  const classic = res.map(r => r.data.classic).find(v => !!v);
+  if (classic) {
+    if (!classic.snapshots?.length) {
+      return [];
+    }
+
+    const { sharesToken, underlyingToken } = classic;
+    const underlyingBreakdownTokens = sortEntitiesByOrderList(
+      classic.underlyingBreakdownTokens,
+      'address',
+      classic.underlyingBreakdownTokensOrder
+    )
+      .map(toToken)
+      .filter(isDefined);
+    if (underlyingBreakdownTokens.length < classic.underlyingBreakdownTokensOrder.length) {
+      logger.error(`Missing underlying breakdown tokens for classic ${sharesToken.address}`);
+      return [];
+    }
+
+    return classic.snapshots.map(snapshot =>
+      handleClassicPrice(sharesToken, underlyingToken, underlyingBreakdownTokens, snapshot)
+    );
   }
 
-  const token1 = vault.underlyingToken1;
-
-  return vault.snapshots.map(snapshot => ({
-    t: Number.parseInt(snapshot.roundedTimestamp),
-    min: interpretAsDecimal(snapshot.priceRangeMin1, token1.decimals).toString(),
-    v: interpretAsDecimal(snapshot.priceOfToken0InToken1, token1.decimals).toString(),
-    max: interpretAsDecimal(snapshot.priceRangeMax1, token1.decimals).toString(),
-  }));
+  return undefined;
 };
 
 const vaultHistoricPricesRangeSchema = Type.Union([
@@ -381,7 +501,7 @@ const getVaultHistoricPricesRange = async (
     )
   );
 
-  const vault = res.map(r => r.data.clm).find(v => !!v);
+  const vault = res.map(r => r.data.clm ?? r.data.classic).find(v => !!v);
   if (!vault) {
     return undefined;
   }

@@ -1,9 +1,9 @@
 import { type Static, Type } from '@sinclair/typebox';
 import { GraphQLClient } from 'graphql-request';
 import { isArray } from 'lodash';
-import { type ChainId, allChainIds, chainIdSchema } from '../config/chains';
+import { allChainIds, type ChainId, chainIdSchema } from '../config/chains';
 import { SUBGRAPH_TAG } from '../config/env';
-import { type Sdk, getSdk } from '../queries/codegen/sdk';
+import { getSdk, type Sdk } from '../queries/codegen/sdk';
 import { withTimeout } from './async';
 import { GraphQueryError } from './error';
 import { createCachedFactoryByChainId } from './factory';
@@ -100,6 +100,10 @@ export async function executeOnAllSdks<T>(
     return { errors: [e], results: [] };
   }
 }
+
+export type SdkResult<T extends keyof Sdk> = Awaited<ReturnType<Sdk[T]>> & SdkContext;
+export type AllSdkResult<T extends keyof Sdk> = Array<SdkResult<T>>;
+export type PaginatedAllSdkResult<T extends keyof Sdk> = AllSdkRes<AllSdkResult<T>>;
 
 export async function paginate<R>({
   fetchPage,

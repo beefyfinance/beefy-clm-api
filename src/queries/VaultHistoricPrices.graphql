@@ -5,6 +5,73 @@ fragment Token on Token {
   decimals
 }
 
+fragment ClmSnapshotData on ClmSnapshot {
+  roundedTimestamp
+  nativeToUSDPrice
+  priceRangeMin1
+  priceOfToken0InToken1
+  priceRangeMax1
+  token0ToNativePrice
+  token1ToNativePrice
+  totalUnderlyingAmount0
+  totalUnderlyingAmount1
+  totalSupply: managerTotalSupply
+}
+
+fragment ClassicSnapshotData on ClassicSnapshot {
+  roundedTimestamp
+  nativeToUSDPrice
+  underlyingAmount
+  underlyingToNativePrice
+  underlyingBreakdownToNativePrices
+  vaultUnderlyingBreakdownBalances
+  vaultUnderlyingTotalSupply
+  totalSupply: vaultSharesTotalSupply
+}
+
+fragment ClmPriceData on CLM {
+  sharesToken: managerToken {
+    ...Token
+  }
+  underlyingToken0 {
+    ...Token
+  }
+  underlyingToken1 {
+    ...Token
+  }
+  snapshots(
+    first: $first
+    skip: $skip
+    orderBy: roundedTimestamp
+    orderDirection: asc
+    where: { roundedTimestamp_gte: $since, period: $period }
+  ) {
+    ...ClmSnapshotData
+  }
+}
+
+fragment ClassicPriceData on Classic {
+  sharesToken: vaultSharesToken {
+    ...Token
+  }
+  underlyingToken {
+    ...Token
+  }
+  underlyingBreakdownTokens {
+    ...Token
+  }
+  underlyingBreakdownTokensOrder
+  snapshots(
+    first: $first
+    skip: $skip
+    orderBy: roundedTimestamp
+    orderDirection: asc
+    where: { roundedTimestamp_gte: $since, period: $period }
+  ) {
+    ...ClassicSnapshotData
+  }
+}
+
 query VaultHistoricPrices(
   $vault_address: ID!
   $since: BigInt!
@@ -13,21 +80,9 @@ query VaultHistoricPrices(
   $skip: Int = 0
 ) {
   clm(id: $vault_address) {
-    underlyingToken1 {
-      ...Token
-    }
-    snapshots(
-      first: $first
-      skip: $skip
-      orderBy: roundedTimestamp
-      orderDirection: asc
-      # TODO remove managerTotalSupply_gt once reindexed to not save snapshots when total supply is 0
-      where: { roundedTimestamp_gte: $since, period: $period, managerTotalSupply_gt: 0 }
-    ) {
-      roundedTimestamp
-      priceRangeMin1
-      priceOfToken0InToken1
-      priceRangeMax1
-    }
+    ...ClmPriceData
+  }
+  classic(id: $vault_address) {
+    ...ClassicPriceData
   }
 }
