@@ -115,8 +115,8 @@ const mergeClmPositionInteractions = (
           throw new Error(`Missing reward token ${address}`);
         }
         return {
-          address: token!.address,
-          decimals: Number.parseInt(token!.decimals),
+          address: token.address,
+          decimals: Number.parseInt(token.decimals),
         };
       });
       const rewardBalancesDelta: Decimal[] = interaction.rewardBalancesDelta.map((rewardDelta, i) =>
