@@ -16,8 +16,38 @@ query VaultPrice($vault_address: ID!) {
     underlyingToken1 {
       ...Token
     }
-    priceOfToken0InToken1
+    nativeToUSDPrice
     priceRangeMin1
+    priceOfToken0InToken1
     priceRangeMax1
+    token0ToNativePrice
+    token1ToNativePrice
+    totalUnderlyingAmount0
+    totalUnderlyingAmount1
+    totalSupply: managerTotalSupply
+  }
+  classic(id: $vault_address) {
+    sharesToken: vaultSharesToken {
+      ...Token
+    }
+    underlyingToken {
+      ...Token
+    }
+    underlyingBreakdownTokens {
+      ...Token
+    }
+    underlyingBreakdownTokensOrder
+    nativeToUSDPrice
+    underlyingAmount
+    underlyingToNativePrice
+    underlyingBreakdownToNativePrices
+    vaultUnderlyingBreakdownBalances
+    vaultUnderlyingTotalSupply
+    totalSupply: vaultSharesTotalSupply
+  }
+  _meta {
+    block {
+      timestamp
+    }
   }
 }
