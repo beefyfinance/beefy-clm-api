@@ -13,7 +13,12 @@ import { interpretAsDecimal } from '../../utils/decimal';
 import type { Address, Hex } from '../../utils/scalar-types';
 import { getSdksForChain, paginate } from '../../utils/sdk';
 import { setOpts } from '../../utils/typebox';
-import { prepareVaultHarvests, vaultHarvestSchema } from './vault';
+import {
+  classicHarvestSchema,
+  clmHarvestSchema,
+  prepareClassicHarvests,
+  prepareClmHarvests,
+} from './vault';
 
 export default async function (
   instance: FastifyInstance,
@@ -191,10 +196,18 @@ const getVaults = async (chain: ChainId, period: Period): Promise<Vaults> => {
 };
 
 const manyVaultHarvestSchema = Type.Array(
-  Type.Object({
-    vaultAddress: addressSchema,
-    harvests: Type.Array(vaultHarvestSchema),
-  })
+  Type.Union([
+    Type.Object({
+      vaultAddress: addressSchema,
+      type: Type.Literal('clm'),
+      harvests: Type.Array(clmHarvestSchema),
+    }),
+    Type.Object({
+      vaultAddress: addressSchema,
+      type: Type.Literal('classic'),
+      harvests: Type.Array(classicHarvestSchema),
+    }),
+  ])
 );
 type ManyVaultsHarvests = Static<typeof manyVaultHarvestSchema>;
 
@@ -211,18 +224,33 @@ const getManyVaultsHarvests = async (
     )
   );
 
-  const rawVaults = res.flatMap(chainRes => chainRes.data.clms);
+  const rawClms = res.flatMap(chainRes => chainRes.data.clms);
+  const rawClassics = res.flatMap(chainRes => chainRes.data.classics);
+  const vaultsWithHarvests: ManyVaultsHarvests = [];
 
-  return rawVaults.reduce((acc, vault): ManyVaultsHarvests => {
+  rawClms.forEach(vault => {
     if (vault.harvests.length === 0) {
-      return acc;
+      return;
     }
 
-    acc.push({
+    vaultsWithHarvests.push({
       vaultAddress: String(vault.vaultAddress),
-      harvests: prepareVaultHarvests(vault),
+      type: 'clm',
+      harvests: prepareClmHarvests(vault),
     });
+  });
 
-    return acc;
-  }, [] as ManyVaultsHarvests);
+  rawClassics.forEach(vault => {
+    if (vault.harvests.length === 0) {
+      return;
+    }
+
+    vaultsWithHarvests.push({
+      vaultAddress: String(vault.vaultAddress),
+      type: 'classic',
+      harvests: prepareClassicHarvests(vault),
+    });
+  });
+
+  return vaultsWithHarvests;
 };

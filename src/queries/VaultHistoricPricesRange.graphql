@@ -4,8 +4,7 @@ query VaultHistoricPricesRange($vault_address: ID!, $period: BigInt!) {
       first: 1
       orderBy: roundedTimestamp
       orderDirection: asc
-      # TODO remove managerTotalSupply_gt once reindexed to not save snapshots when total supply is 0
-      where: { period: $period, managerTotalSupply_gt: 0 }
+      where: { period: $period }
     ) {
       roundedTimestamp
     }
@@ -13,8 +12,25 @@ query VaultHistoricPricesRange($vault_address: ID!, $period: BigInt!) {
       first: 1
       orderBy: roundedTimestamp
       orderDirection: desc
-      # TODO remove managerTotalSupply_gt once reindexed to not save snapshots when total supply is 0
-      where: { period: $period, managerTotalSupply_gt: 0 }
+      where: { period: $period }
+    ) {
+      roundedTimestamp
+    }
+  }
+  classic(id: $vault_address) {
+    minSnapshot: snapshots(
+      first: 1
+      orderBy: roundedTimestamp
+      orderDirection: asc
+      where: { period: $period }
+    ) {
+      roundedTimestamp
+    }
+    maxSnapshot: snapshots(
+      first: 1
+      orderBy: roundedTimestamp
+      orderDirection: desc
+      where: { period: $period }
     ) {
       roundedTimestamp
     }

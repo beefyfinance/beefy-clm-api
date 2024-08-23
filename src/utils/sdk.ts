@@ -101,6 +101,10 @@ export async function executeOnAllSdks<T>(
   }
 }
 
+export type SdkResult<T extends keyof Sdk> = Awaited<ReturnType<Sdk[T]>> & SdkContext;
+export type AllSdkResult<T extends keyof Sdk> = Array<SdkResult<T>>;
+export type PaginatedAllSdkResult<T extends keyof Sdk> = AllSdkRes<AllSdkResult<T>>;
+
 export async function paginate<R>({
   fetchPage,
   count,
