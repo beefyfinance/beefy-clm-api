@@ -98,6 +98,14 @@ const timelineClmInteractionOutputSchema = Type.Object({
       reward_pool_diff: bigDecimalSchema,
     })
   ),
+  reward_pool_claim_details: Type.Array(
+    Type.Object({
+      claimed_amount: bigDecimalSchema,
+      reward_to_usd: bigDecimalSchema,
+      reward_address: addressSchema,
+    })
+  ),
+  claimed_reward_pool: Type.Any([addressSchema, Type.Undefined()]),
 });
 const timelineClassicInteractionOutputSchema = Type.Object({
   type: Type.Literal('classic'),
@@ -194,6 +202,12 @@ function clmInteractionToOutput(interaction: TimelineClmInteraction): TimelineCl
       reward_pool_balance: rewardPool.balance.toString(),
       reward_pool_diff: rewardPool.delta.toString(),
     })),
+    reward_pool_claim_details: interaction.rewardBalancesDelta.map((rewardBalanceDelta, i) => ({
+      claimed_amount: rewardBalanceDelta.toString(),
+      reward_to_usd: interaction.rewardsToUsd[i].toString(),
+      reward_address: interaction.clm.rewardTokens[i],
+    })),
+    claimed_reward_pool: interaction.claimedRewardPool?.toString(),
   };
 }
 

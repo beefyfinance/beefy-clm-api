@@ -46,6 +46,11 @@ fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   managerBalanceDelta
   rewardPoolBalances
   rewardPoolBalancesDelta
+  rewardBalancesDelta
+  claimedRewardPool {
+    id
+  }
+  rewardToNativePrices
   underlyingBalance0
   underlyingBalance0Delta
   underlyingBalance1
@@ -53,6 +58,12 @@ fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   token0ToNativePrice
   token1ToNativePrice
   nativeToUSDPrice
+  clm {
+    rewardTokensOrder
+    rewardTokens {
+      ...Token
+    }
+  }
   type
 }
 
@@ -115,14 +126,14 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
   }
 
   clmPositionInteractions(
-    first: $first
-    skip: $skip
-    orderBy: timestamp
-    orderDirection: asc
-    where: {
-      investor: $investor_address,
-      type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, CLM_REWARD_POOL_STAKE, CLM_REWARD_POOL_UNSTAKE]
-    }
+      first: $first
+      skip: $skip
+      orderBy: timestamp
+      orderDirection: asc
+      where: {
+        investor: $investor_address,
+        type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, CLM_REWARD_POOL_STAKE, CLM_REWARD_POOL_UNSTAKE, CLM_REWARD_POOL_CLAIM]
+      }
   ) {
     ...InvestorTimelineClmPositionInteraction
     investorPosition {
