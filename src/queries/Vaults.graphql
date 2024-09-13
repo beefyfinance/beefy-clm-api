@@ -24,10 +24,8 @@ query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
       orderDirection: desc
     ) {
       timestamp
-      underlyingMainAmount0
-      underlyingMainAmount1
-      underlyingAltAmount0
-      underlyingAltAmount1
+      underlyingAmount0
+      underlyingAmount1
       collectedAmount0
       collectedAmount1
       token0ToNativePrice
