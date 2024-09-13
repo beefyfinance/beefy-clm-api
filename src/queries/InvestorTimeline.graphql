@@ -120,20 +120,34 @@ fragment InvestorTimelineClassicPositionInteraction on ClassicPositionInteractio
   type
 }
 
-query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: Int = 0) {
-  clmPositions(skip: $skip, first: $first, where: { investor: $investor_address, totalBalance_gt: 0 }) {
+query InvestorTimeline(
+  $investor_address: String!
+  $first: Int = 1000
+  $skip: Int = 0
+) {
+  clmPositions(
+    skip: $skip
+    first: $first
+    where: { investor: $investor_address, totalBalance_gt: 0 }
+  ) {
     ...InvestorTimelineClmPosition
   }
 
   clmPositionInteractions(
-      first: $first
-      skip: $skip
-      orderBy: timestamp
-      orderDirection: asc
-      where: {
-        investor: $investor_address,
-        type_in: [MANAGER_DEPOSIT, MANAGER_WITHDRAW, CLM_REWARD_POOL_STAKE, CLM_REWARD_POOL_UNSTAKE, CLM_REWARD_POOL_CLAIM]
-      }
+    first: $first
+    skip: $skip
+    orderBy: timestamp
+    orderDirection: asc
+    where: {
+      investor: $investor_address
+      type_in: [
+        MANAGER_DEPOSIT
+        MANAGER_WITHDRAW
+        CLM_REWARD_POOL_STAKE
+        CLM_REWARD_POOL_UNSTAKE
+        CLM_REWARD_POOL_CLAIM
+      ]
+    }
   ) {
     ...InvestorTimelineClmPositionInteraction
     investorPosition {
@@ -141,18 +155,36 @@ query InvestorTimeline($investor_address: String!, $first: Int = 1000, $skip: In
     }
   }
 
-  classicPositions(skip: $skip, first: $first, where: { investor: $investor_address, totalBalance_gt: 0 }) {
+  classicPositions(
+    skip: $skip
+    first: $first
+    where: {
+      investor: $investor_address
+      totalBalance_gt: 0
+      # these vaults are not properly indexed and cause errors
+      classic_not_in: ["0xbbdeaaa32cbce61e0a2809edcae8d1857c55a5dd"]
+    }
+  ) {
     ...InvestorTimelineClassicPosition
   }
 
-  classicPositionInteractions(first: $first
+  classicPositionInteractions(
+    first: $first
     skip: $skip
     orderBy: timestamp
     orderDirection: asc
     where: {
-      investor: $investor_address,
-      type_in: [VAULT_DEPOSIT, VAULT_WITHDRAW, CLASSIC_REWARD_POOL_STAKE, CLASSIC_REWARD_POOL_UNSTAKE]
-    }) {
+      investor: $investor_address
+      # these vaults are not properly indexed and cause errors
+      classic_not_in: ["0xbbdeaaa32cbce61e0a2809edcae8d1857c55a5dd"]
+      type_in: [
+        VAULT_DEPOSIT
+        VAULT_WITHDRAW
+        CLASSIC_REWARD_POOL_STAKE
+        CLASSIC_REWARD_POOL_UNSTAKE
+      ]
+    }
+  ) {
     ...InvestorTimelineClassicPositionInteraction
     investorPosition {
       id
