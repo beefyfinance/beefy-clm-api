@@ -127,13 +127,12 @@ const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: 
           )
         ),
       collectTimestamp: fromUnixTime(fee.timestamp),
-      totalValueLocked: interpretAsDecimal(fee.underlyingMainAmount0, token0.decimals)
-        .plus(interpretAsDecimal(fee.underlyingAltAmount0, token0.decimals))
+      totalValueLocked: interpretAsDecimal(fee.underlyingAmount0, token0.decimals)
         .times(interpretAsDecimal(fee.token0ToNativePrice, 18))
         .plus(
-          interpretAsDecimal(fee.underlyingMainAmount1, token1.decimals)
-            .plus(interpretAsDecimal(fee.underlyingAltAmount1, token1.decimals))
-            .times(interpretAsDecimal(fee.token1ToNativePrice, 18))
+          interpretAsDecimal(fee.underlyingAmount1, token1.decimals).times(
+            interpretAsDecimal(fee.token1ToNativePrice, 18)
+          )
         ),
     }))
   );
