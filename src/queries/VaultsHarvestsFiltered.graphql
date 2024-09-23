@@ -27,8 +27,6 @@ query VaultsHarvestsFiltered(
   classics(first: $first, skip: $skip, where: { 
     lifecycle_not: INITIALIZING, 
     id_in: $vaults,
-    # these vaults are not properly indexed and cause errors
-    id_not_in: ["0xbbdeaaa32cbce61e0a2809edcae8d1857c55a5dd"]
   }) {
     vaultAddress: id
     underlyingToken {
