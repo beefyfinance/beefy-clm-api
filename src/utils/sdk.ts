@@ -112,10 +112,10 @@ export async function paginate<R>({
   fetchAtMost = 10000,
 }: {
   fetchPage: (params: { skip: number; first: number }) => Promise<R>;
-  count: (res: R) => number | number[];
+  count: (res: NoInfer<R>) => number | number[];
   pageSize?: number;
   fetchAtMost?: number;
-}): Promise<R[]> {
+}): Promise<NoInfer<R>[]> {
   const results: R[] = [];
   let skip = 0;
   let fetched = 0;

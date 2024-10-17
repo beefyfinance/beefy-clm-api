@@ -1,6 +1,6 @@
 import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
-import { max, sortedUniq } from 'lodash';
+import { groupBy, max, sortedUniq, values } from 'lodash';
 import { type ChainId, chainIdSchema } from '../../config/chains';
 import type { VaultsQuery } from '../../queries/codegen/sdk';
 import { addressSchema } from '../../schema/address';
@@ -217,14 +217,66 @@ const getManyVaultsHarvests = async (
 ): Promise<ManyVaultsHarvests> => {
   const res = await Promise.all(
     getSdksForChain(chain).map(sdk =>
-      vaults.length
-        ? sdk.VaultsHarvestsFiltered({ since: since.toString(), vaults })
-        : sdk.VaultsHarvests({ since: since.toString() })
+      paginate({
+        fetchPage: ({ skip: vaultsSkip, first: vaultsFirst }) =>
+          paginate({
+            fetchPage: ({ skip: harvestsSkip, first: harvestsFirst }) =>
+              vaults.length
+                ? sdk.VaultsHarvestsFiltered({
+                    since: since.toString(),
+                    vaults,
+                    vaultsSkip,
+                    vaultsFirst,
+                    harvestsSkip,
+                    harvestsFirst,
+                  })
+                : sdk.VaultsHarvests({
+                    since: since.toString(),
+                    vaultsSkip,
+                    vaultsFirst,
+                    harvestsSkip,
+                    harvestsFirst,
+                  }),
+            count: res =>
+              max([
+                ...res.data.clms.flatMap(clmPage => clmPage.harvests.length),
+                ...res.data.classics.flatMap(classicPage => classicPage.harvests.length),
+              ]) || 0,
+          }),
+        count: res =>
+          max([
+            ...res.flatMap(page => page.data.clms.length),
+            ...res.flatMap(page => page.data.classics.length),
+          ]) || 0,
+      })
     )
   );
 
-  const rawClms = res.flatMap(chainRes => chainRes.data.clms);
-  const rawClassics = res.flatMap(chainRes => chainRes.data.classics);
+  const rawClms = values(
+    groupBy(
+      res.flatMap(chainRes =>
+        chainRes.flatMap(vaultsPage => vaultsPage.flatMap(harvestsPage => harvestsPage.data.clms))
+      ),
+      v => v.vaultAddress
+    )
+  ).map(vaults => ({
+    ...vaults[0],
+    harvests: vaults.flatMap(vault => vault.harvests),
+  }));
+
+  const rawClassics = values(
+    groupBy(
+      res.flatMap(chainRes =>
+        chainRes.flatMap(vaultsPage =>
+          vaultsPage.flatMap(harvestsPage => harvestsPage.data.classics)
+        )
+      ),
+      v => v.vaultAddress
+    )
+  ).map(vaults => ({
+    ...vaults[0],
+    harvests: vaults.flatMap(vault => vault.harvests),
+  }));
   const vaultsWithHarvests: ManyVaultsHarvests = [];
 
   rawClms.forEach(vault => {

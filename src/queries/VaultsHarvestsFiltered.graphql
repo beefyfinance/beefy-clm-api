@@ -1,10 +1,16 @@
 query VaultsHarvestsFiltered(
   $since: BigInt!
-  $first: Int = 1000
-  $skip: Int = 0
   $vaults: [Bytes!]!
+  $vaultsFirst: Int = 1000
+  $vaultsSkip: Int = 0
+  $harvestsFirst: Int = 1000
+  $harvestsSkip: Int = 0
 ) {
-  clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING, id_in: $vaults }) {
+  clms(
+    first: $vaultsFirst
+    skip: $vaultsSkip
+    where: { lifecycle_not: INITIALIZING, id_in: $vaults }
+  ) {
     vaultAddress: id
     underlyingToken0 {
       decimals
@@ -18,16 +24,18 @@ query VaultsHarvestsFiltered(
     harvests(
       orderBy: timestamp
       orderDirection: desc
-      first: 1000
+      first: $harvestsFirst
+      skip: $harvestsSkip
       where: { timestamp_gte: $since }
     ) {
       ...ClmHarvestData
     }
   }
-  classics(first: $first, skip: $skip, where: { 
-    lifecycle_not: INITIALIZING, 
-    id_in: $vaults,
-  }) {
+  classics(
+    first: $vaultsFirst
+    skip: $vaultsSkip
+    where: { lifecycle_not: INITIALIZING, id_in: $vaults }
+  ) {
     vaultAddress: id
     underlyingToken {
       decimals
@@ -38,7 +46,8 @@ query VaultsHarvestsFiltered(
     harvests(
       orderBy: timestamp
       orderDirection: desc
-      first: 1000
+      first: $harvestsFirst
+      skip: $harvestsSkip
       where: { timestamp_gte: $since }
     ) {
       ...ClassicHarvestData
