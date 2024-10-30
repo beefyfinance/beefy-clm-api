@@ -16,6 +16,7 @@ export enum ChainId {
   avax = 'avax',
   rootstock = 'rootstock',
   scroll = 'scroll',
+  mode = 'mode',
 }
 
 export const allChainIds: Array<ChainId> = Object.values(ChainId);
