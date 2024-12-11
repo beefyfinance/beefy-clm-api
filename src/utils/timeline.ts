@@ -15,6 +15,7 @@ import { isDefined } from './array';
 import { fromUnixTime } from './date';
 import { interpretAsDecimal } from './decimal';
 import { sortEntitiesByOrderList } from './entity-order';
+import { FriendlyError } from './error';
 import { getLoggerFor } from './log';
 import type { Address } from './scalar-types';
 import { type PaginatedAllSdkResult, executeOnAllSdks, paginate } from './sdk';
@@ -51,16 +52,14 @@ export type TimelineClmInteraction = {
   manager: BalanceDelta;
   rewardPools: BalanceDelta[];
   rewardPoolTotal: BalanceDelta;
-  rewardBalancesDelta: Decimal[];
-  claimedRewardPool: string | null;
-  rewardsToUsd: Decimal[];
   total: BalanceDelta;
   underlying0: BalanceDelta;
   underlying1: BalanceDelta;
   usd: BalanceDelta;
-  clm: {
-    rewardTokens: Array<string>;
-  };
+  claimedRewardPool: string | null;
+  rewardTokens: Token[];
+  rewardBalancesDelta: Decimal[];
+  rewardsToUsd: Decimal[];
   actions: ClmActionsEnum[];
 };
 
@@ -107,6 +106,7 @@ const mergeClmPositionInteractions = (
   chain: ChainId,
   managerToken: Token,
   rewardPoolTokens: Token[],
+  rewardTokens: Token[],
   token0: Token,
   token1: Token,
   interactions: InvestorTimelineClmPositionInteractionFragment[]
@@ -137,18 +137,6 @@ const mergeClmPositionInteractions = (
         delta: new Decimal(0),
       });
 
-      const rewardTokens = interaction.clm.rewardTokensOrder.map(address => {
-        const token = interaction.clm.rewardTokens.find(
-          t => t.address.toLowerCase() === address.toLowerCase()
-        );
-        if (!token) {
-          throw new Error(`Missing reward token ${address}`);
-        }
-        return {
-          address: token.address,
-          decimals: Number.parseInt(token.decimals),
-        };
-      });
       const rewardBalancesDelta: Decimal[] = interaction.rewardBalancesDelta.map((rewardDelta, i) =>
         interpretAsDecimal(rewardDelta, rewardTokens[i].decimals)
       );
@@ -200,8 +188,7 @@ const mergeClmPositionInteractions = (
         const mergedRewardsToUsd =
           rewardBalancesDelta.length > 0 ? rewardsToUsd : existingTx.rewardsToUsd;
         const mergedClaimedRewardPool =
-          existingTx.claimedRewardPool ??
-          (interaction.claimedRewardPool ? interaction.claimedRewardPool.id : null);
+          interaction.claimedRewardPool?.id || existingTx.claimedRewardPool || null;
 
         acc[txHash] = {
           ...existingTx,
@@ -235,19 +222,15 @@ const mergeClmPositionInteractions = (
           manager,
           rewardPools,
           rewardPoolTotal,
-          rewardBalancesDelta,
-          claimedRewardPool: interaction.claimedRewardPool
-            ? interaction.claimedRewardPool.id
-            : null,
+          claimedRewardPool: interaction.claimedRewardPool?.id || null,
+          rewardTokens,
           rewardsToUsd,
+          rewardBalancesDelta,
           total,
           underlying0,
           underlying1,
           usd,
           actions: [interaction.type],
-          clm: {
-            rewardTokens: interaction.clm.rewardTokensOrder,
-          },
         };
       }
 
@@ -266,12 +249,22 @@ const clmPositionToInteractions = (
 ): TimelineClmInteraction[] => {
   const { id, clm } = position;
   const managerToken = toToken(clm.managerToken);
-  const orderedRewardPoolTokenAddresses = sortEntitiesByOrderList(
+  const rewardPoolTokens = sortEntitiesByOrderList(
     clm.rewardPoolTokens,
     'address',
     clm.rewardPoolTokensOrder
-  );
-  const rewardPoolTokens = orderedRewardPoolTokenAddresses.map(toToken).filter(Boolean) as Token[];
+  )
+    .map(toToken)
+    .filter(isDefined);
+  if (rewardPoolTokens.length < clm.rewardPoolTokensOrder.length) {
+    throw new FriendlyError(`Missing reward pool tokens for position ${id}`);
+  }
+  const rewardTokens = sortEntitiesByOrderList(clm.rewardTokens, 'address', clm.rewardTokensOrder)
+    .map(toToken)
+    .filter(isDefined);
+  if (rewardTokens.length < clm.rewardTokensOrder.length) {
+    throw new FriendlyError(`Missing reward tokens for position ${id}`);
+  }
   const token0 = toToken(clm.underlyingToken0);
   const token1 = toToken(clm.underlyingToken1);
   if (!managerToken || !token0 || !token1) {
@@ -283,6 +276,7 @@ const clmPositionToInteractions = (
     chainId,
     managerToken,
     rewardPoolTokens,
+    rewardTokens,
     token0,
     token1,
     interactions
