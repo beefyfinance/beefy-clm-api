@@ -307,6 +307,7 @@ const mergeClassicPositionInteractions = (
       const nativeToUsd = interpretAsDecimal(interaction.nativeToUSDPrice, 18);
       const shareToUnderlying = totalUnderlyingInVault.div(vaultTotalSupply);
       const underlyingToUsd = underlyingToNative.mul(nativeToUsd);
+      const shareToUsd = shareToUnderlying.mul(underlyingToUsd);
       const underlyingToBreakdown = underlyingBreakdownTokens.map((breakdownToken, i) =>
         interpretAsDecimal(
           interaction.vaultUnderlyingBreakdownBalances[i] || '0',
@@ -341,8 +342,8 @@ const mergeClassicPositionInteractions = (
         delta: vault.delta.add(rewardPoolTotal.delta),
       };
       const usd: BalanceDelta = {
-        balance: total.balance.mul(underlyingToUsd),
-        delta: total.delta.mul(underlyingToUsd),
+        balance: total.balance.mul(shareToUsd),
+        delta: total.delta.mul(shareToUsd),
       };
       const txHash: string = interaction.createdWith.hash;
 
