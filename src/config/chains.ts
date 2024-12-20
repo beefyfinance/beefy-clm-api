@@ -3,21 +3,22 @@ import { StringEnum } from '../utils/typebox';
 
 export enum ChainId {
   arbitrum = 'arbitrum',
+  avax = 'avax',
   base = 'base',
-  optimism = 'optimism',
-  moonbeam = 'moonbeam',
+  bsc = 'bsc',
   linea = 'linea',
-  polygon = 'polygon',
-  zksync = 'zksync',
+  lisk = 'lisk',
   manta = 'manta',
   mantle = 'mantle',
-  sei = 'sei',
-  bsc = 'bsc',
-  avax = 'avax',
+  mode = 'mode',
+  moonbeam = 'moonbeam',
+  optimism = 'optimism',
+  polygon = 'polygon',
   rootstock = 'rootstock',
   scroll = 'scroll',
-  mode = 'mode',
-  lisk = 'lisk',
+  sei = 'sei',
+  sonic = 'sonic',
+  zksync = 'zksync',
 }
 
 export const allChainIds: Array<ChainId> = Object.values(ChainId);
