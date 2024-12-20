@@ -14,7 +14,7 @@ Access api for the CLM subgraph: https://github.com/beefyfinance/cowcentrated-su
     
 ## Deploy the api
 
-- `npm run deploy` to 
+- `npm run deploy` to deploy the api
 
 
 ## Test urls
