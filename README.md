@@ -1,5 +1,25 @@
 # beefy-clm-api
 
+Access api for the CLM subgraph: https://github.com/beefyfinance/cowcentrated-subgraph
+
+## add a new chain
+
+- Add the chain to `src/config/chains.ts`
+- `npm run test` and fix errs
+- `npm run format`
+- `npm run dev` 
+    - http://localhost:4000/api/v1/status
+    - http://localhost:4000/api/v1/vaults/:chain/1d
+    - http://localhost:4000/api/v1/investor/:address/timeline
+    
+## Deploy the api
+
+- `npm run deploy` to 
+
+
+## Test urls
+```
+
 https://clm-api.beefy.finance/api/documentation
 http://localhost:4000/api/documentation
 
@@ -35,15 +55,4 @@ http://localhost:4000/api/v1/vaults/arbitrum/harvests/1712591753?vaults=0xeea411
 
 https://clm-api.beefy.finance/api/v1/status
 http://localhost:4000/api/v1/status
-
-
-# add a new chain
-
-- Add the chain to `src/config/chains.ts`
-- `npm run test` and fix errs
-- `npm run format`
-- `npm run dev` 
-    - http://localhost:4000/api/v1/status
-    - http://localhost:4000/api/v1/vaults/:chain/1d
-    - http://localhost:4000/api/v1/investor/:address/timeline
-    
+```
