@@ -230,6 +230,41 @@ export default async function (
     );
   }
 
+  {
+    const urlParamsSchema = Type.Object({
+      chain: setOpts(chainIdSchema, { description: 'The chain the vault is on' }),
+      vault_address: setOpts(addressSchema, {
+        description: 'The vault contract address',
+      }),
+    });
+
+    type UrlParams = Static<typeof urlParamsSchema>;
+
+    const schema: FastifySchema = {
+      tags: ['vault'],
+      params: urlParamsSchema,
+      summary: 'Get all move ticks for a vault',
+      description: 'Get all move ticks for a vault, excluding deposits and withdrawals',
+      response: {
+        200: moveTicksSchema,
+      },
+    };
+
+    instance.get<{ Params: UrlParams }>(
+      '/:chain/:vault_address/move-ticks',
+      { schema },
+      async (request, reply) => {
+        const { chain, vault_address } = request.params;
+        const result = await asyncCache.wrap(
+          `vault-move-ticks:${chain}:${vault_address.toLocaleLowerCase()}`,
+          30 * 1000,
+          async () => await getVaultMoveTicks(chain, vault_address as Hex)
+        );
+        reply.send(result);
+      }
+    );
+  }
+
   done();
 }
 
@@ -583,4 +618,61 @@ const getVaultInvestors = async (
       usd_balance: positionBalanceUsd.toFixed(10),
     };
   });
+};
+
+const vaultMoveTicksSchema = Type.Object({
+  id: Type.String(),
+  blockNumber: Type.Number(),
+  timestamp: setOpts(timestampStrSchema, { description: 'The timestamp of the move tick' }),
+  amount0: setOpts(bigDecimalSchema, { description: 'The amount of token0 moved' }),
+  amount1: setOpts(bigDecimalSchema, { description: 'The amount of token1 moved' }),
+});
+const moveTicksSchema = Type.Array(vaultMoveTicksSchema);
+type MoveTicks = Static<typeof moveTicksSchema>;
+
+const getVaultMoveTicks = async (chain: ChainId, vault_address: Address): Promise<MoveTicks> => {
+  const res = await Promise.all(
+    getSdksForChain(chain).map(async sdk =>
+      paginate({
+        fetchPage: ({ skip, first }) =>
+          sdk.VaultMoveTicks({
+            vault_address: vault_address,
+            skip,
+            first,
+          }),
+        count: res =>
+          Math.max(
+            res.data.clm?.deposits.length ?? 0,
+            res.data.clm?.withdrawals.length ?? 0,
+            res.data.clm?.tvlEvents.length ?? 0
+          ),
+      })
+    )
+  );
+
+  const excludeTxHashs = new Set<string>();
+  for (const chainRes of res) {
+    for (const chainPage of chainRes) {
+      for (const deposit of chainPage.data.clm?.deposits ?? []) {
+        excludeTxHashs.add(deposit.createdWith.id);
+      }
+      for (const withdraw of chainPage.data.clm?.withdrawals ?? []) {
+        excludeTxHashs.add(withdraw.createdWith.id);
+      }
+    }
+  }
+
+  return res.flatMap(chainRes =>
+    chainRes.flatMap(chainPage =>
+      (chainPage.data.clm?.tvlEvents ?? [])
+        .filter(tvlEvent => !excludeTxHashs.has(tvlEvent.createdWith.id))
+        .map(tvlEvent => ({
+          id: tvlEvent.id,
+          blockNumber: Number.parseInt(tvlEvent.createdWith.blockNumber),
+          timestamp: tvlEvent.timestamp,
+          amount0: tvlEvent.underlyingAmount0,
+          amount1: tvlEvent.underlyingAmount1,
+        }))
+    )
+  );
 };

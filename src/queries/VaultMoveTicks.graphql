@@ -1,0 +1,64 @@
+fragment Token on Token {
+  address: id
+  name
+  symbol
+  decimals
+}
+
+query VaultMoveTicks(
+  $vault_address: ID!
+  $skip: Int! = 0
+  $first: Int! = 1000
+) {
+  clm(id: $vault_address) {
+    sharesToken: managerToken {
+      ...Token
+    }
+    underlyingToken0 {
+      ...Token
+    }
+    underlyingToken1 {
+      ...Token
+    }
+    deposits(
+      skip: $skip
+      first: $first
+      orderBy: timestamp
+      orderDirection: asc
+    ) {
+      createdWith {
+        id
+      }
+    }
+    withdrawals(
+      skip: $skip
+      first: $first
+      orderBy: timestamp
+      orderDirection: asc
+    ) {
+      createdWith {
+        id
+      }
+    }
+    tvlEvents(
+      skip: $skip
+      first: $first
+      orderBy: timestamp
+      orderDirection: asc
+    ) {
+      id
+      createdWith {
+        id
+        blockNumber
+      }
+      timestamp
+      underlyingAmount0
+      underlyingAmount1
+    }
+  }
+  _meta {
+    block {
+      timestamp
+    }
+  }
+}
