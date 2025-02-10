@@ -9,6 +9,8 @@ query VaultMoveTicks(
   $vault_address: ID!
   $skip: Int! = 0
   $first: Int! = 1000
+  $start_time: BigInt! = "0"
+  $end_time: BigInt! = "2000000000"
 ) {
   clm(id: $vault_address) {
     sharesToken: managerToken {
@@ -25,6 +27,7 @@ query VaultMoveTicks(
       first: $first
       orderBy: timestamp
       orderDirection: asc
+      where: { timestamp_gte: $start_time, timestamp_lt: $end_time }
     ) {
       createdWith {
         id
@@ -35,6 +38,7 @@ query VaultMoveTicks(
       first: $first
       orderBy: timestamp
       orderDirection: asc
+      where: { timestamp_gte: $start_time, timestamp_lt: $end_time }
     ) {
       createdWith {
         id
@@ -45,6 +49,7 @@ query VaultMoveTicks(
       first: $first
       orderBy: timestamp
       orderDirection: asc
+      where: { timestamp_gte: $start_time, timestamp_lt: $end_time }
     ) {
       id
       createdWith {

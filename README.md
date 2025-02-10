@@ -54,6 +54,9 @@ http://localhost:4000/api/v1/vaults/arbitrum/harvests/1712591753?vaults=0xeea411
 https://clm-api.beefy.finance/api/v1/vault/rootstock/0x2ca732484427fc2db0ead8eedeb97869a422845d/move-ticks
 http://localhost:4000/api/v1/vault/rootstock/0x2ca732484427fc2db0ead8eedeb97869a422845d/move-ticks
 
+# With time range parameters (timestamps in seconds):
+https://clm-api.beefy.finance/api/v1/vault/rootstock/0x2ca732484427fc2db0ead8eedeb97869a422845d/move-ticks?start_time=1730941703&end_time=1730941903
+http://localhost:4000/api/v1/vault/rootstock/0x2ca732484427fc2db0ead8eedeb97869a422845d/move-ticks?start_time=1730941703&end_time=1730941903
+
 https://clm-api.beefy.finance/api/v1/status
 http://localhost:4000/api/v1/status
-```

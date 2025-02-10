@@ -240,25 +240,37 @@ export default async function (
 
     type UrlParams = Static<typeof urlParamsSchema>;
 
+    const queryStringSchema = Type.Object({
+      start_time: setOpts(Type.Optional(timestampStrSchema), {
+        description: 'Start timestamp (inclusive)',
+      }),
+      end_time: setOpts(Type.Optional(timestampStrSchema), {
+        description: 'End timestamp (exclusive)',
+      }),
+    });
+    type QueryString = Static<typeof queryStringSchema>;
+
     const schema: FastifySchema = {
       tags: ['vault'],
       params: urlParamsSchema,
       summary: 'Get all move ticks for a vault',
       description: 'Get all move ticks for a vault, excluding deposits and withdrawals',
+      querystring: queryStringSchema,
       response: {
         200: moveTicksSchema,
       },
     };
 
-    instance.get<{ Params: UrlParams }>(
+    instance.get<{ Params: UrlParams; Querystring: QueryString }>(
       '/:chain/:vault_address/move-ticks',
       { schema },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
+        const { start_time, end_time } = request.query;
         const result = await asyncCache.wrap(
-          `vault-move-ticks:${chain}:${vault_address.toLocaleLowerCase()}`,
+          `vault-move-ticks:${chain}:${vault_address.toLocaleLowerCase()}:${start_time}:${end_time}`,
           30 * 1000,
-          async () => await getVaultMoveTicks(chain, vault_address as Hex)
+          async () => await getVaultMoveTicks(chain, vault_address as Hex, start_time, end_time)
         );
         reply.send(result);
       }
@@ -630,7 +642,12 @@ const vaultMoveTicksSchema = Type.Object({
 const moveTicksSchema = Type.Array(vaultMoveTicksSchema);
 type MoveTicks = Static<typeof moveTicksSchema>;
 
-const getVaultMoveTicks = async (chain: ChainId, vault_address: Address): Promise<MoveTicks> => {
+const getVaultMoveTicks = async (
+  chain: ChainId,
+  vault_address: Address,
+  start_time?: string,
+  end_time?: string
+): Promise<MoveTicks> => {
   const res = await Promise.all(
     getSdksForChain(chain).map(async sdk =>
       paginate({
@@ -639,6 +656,8 @@ const getVaultMoveTicks = async (chain: ChainId, vault_address: Address): Promis
             vault_address: vault_address,
             skip,
             first,
+            start_time: start_time ? start_time : 0,
+            end_time: end_time ? end_time : 2000000000,
           }),
         count: res =>
           Math.max(
