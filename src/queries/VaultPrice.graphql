@@ -25,6 +25,10 @@ query VaultPrice($vault_address: ID!) {
     totalUnderlyingAmount0
     totalUnderlyingAmount1
     totalSupply: managerTotalSupply
+    underlyingMainAmount0
+    underlyingMainAmount1
+    underlyingAltAmount0
+    underlyingAltAmount1
   }
   classic(id: $vault_address) {
     sharesToken: vaultSharesToken {

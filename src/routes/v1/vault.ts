@@ -142,7 +142,10 @@ export default async function (
         const result = await asyncCache.wrap(
           `vault-historical-prices:${chain}:${vault_address.toLocaleLowerCase()}:${period}:${roundedSince}`,
           30 * 1000,
-          async () => await getVaultHistoricPrices(chain, vault_address as Hex, period, since)
+          async () =>
+            (await getVaultHistoricPrices(chain, vault_address as Hex, period, since))?.map(r => ({
+              ...r,
+            }))
         );
 
         if (result === undefined) {

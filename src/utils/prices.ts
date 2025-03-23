@@ -21,6 +21,10 @@ export const clmHistoricPricesSchema = Type.Object({
   totalAmount0: bigDecimalSchema,
   totalAmount1: bigDecimalSchema,
   totalSupply: bigDecimalSchema,
+  mainAmount0: bigDecimalSchema,
+  mainAmount1: bigDecimalSchema,
+  altAmount0: bigDecimalSchema,
+  altAmount1: bigDecimalSchema,
 });
 
 export const classicHistoricPricesSchema = Type.Object({
@@ -70,6 +74,22 @@ export function handleClmPrice(
       underlyingToken1.decimals
     ).toString(),
     totalSupply: interpretAsDecimal(snapshot.totalSupply, sharesToken.decimals).toString(),
+    mainAmount0: interpretAsDecimal(
+      snapshot.underlyingMainAmount0,
+      underlyingToken0.decimals
+    ).toString(),
+    mainAmount1: interpretAsDecimal(
+      snapshot.underlyingMainAmount1,
+      underlyingToken1.decimals
+    ).toString(),
+    altAmount0: interpretAsDecimal(
+      snapshot.underlyingAltAmount0,
+      underlyingToken0.decimals
+    ).toString(),
+    altAmount1: interpretAsDecimal(
+      snapshot.underlyingAltAmount1,
+      underlyingToken1.decimals
+    ).toString(),
   };
 }
 

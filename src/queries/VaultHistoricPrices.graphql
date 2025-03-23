@@ -16,6 +16,10 @@ fragment ClmSnapshotData on ClmSnapshot {
   totalUnderlyingAmount0
   totalUnderlyingAmount1
   totalSupply: managerTotalSupply
+  underlyingMainAmount0
+  underlyingMainAmount1
+  underlyingAltAmount0
+  underlyingAltAmount1
 }
 
 fragment ClassicSnapshotData on ClassicSnapshot {
