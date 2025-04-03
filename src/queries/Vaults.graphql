@@ -6,6 +6,26 @@ fragment Token on Token {
 }
 
 query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
+  classics(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
+    vaultAddress: id
+    underlyingToNativePrice
+    nativeToUSDPrice
+    underlyingToken {
+      ...Token
+    }
+    collectedFees: harvests(
+      first: 1000
+      where: { timestamp_gte: $since }
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      timestamp
+      underlyingAmount
+      compoundedAmount
+      underlyingToNativePrice
+      nativeToUSDPrice
+    }
+  }
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
     vaultAddress: id
     priceOfToken0InToken1

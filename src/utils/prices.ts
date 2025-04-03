@@ -119,10 +119,10 @@ export const handleClassicPrice = (
     totalUnderlyingBreakdown: underlyingBreakdownTokens.map((token, i) => ({
       token: token.address,
       amount: interpretAsDecimal(
-        snapshot.vaultUnderlyingBreakdownBalances[i],
+        snapshot.vaultUnderlyingBreakdownBalances?.[i],
         token.decimals
       ).toString(),
-      priceUsd: interpretAsDecimal(snapshot.underlyingBreakdownToNativePrices[i], 18)
+      priceUsd: interpretAsDecimal(snapshot.underlyingBreakdownToNativePrices?.[i], 18)
         .mul(nativeToUsd)
         .toString(),
     })),

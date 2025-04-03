@@ -5,13 +5,49 @@ fragment Token on Token {
   decimals
 }
 
-query VaultInvestors($clmAddress: String!, $first: Int! = 1000, $skip: Int! = 0) {
+query VaultInvestors(
+  $vault_address: String!
+  $first: Int! = 1000
+  $skip: Int! = 0
+) {
+  classicPositions(
+    first: $first
+    skip: $skip
+    orderBy: id
+    orderDirection: asc
+    where: { totalBalance_gt: 0, classic: $vault_address }
+  ) {
+    classic {
+      vaultAddress: id
+      vaultSharesToken {
+        ...Token
+      }
+      underlyingToken {
+        ...Token
+      }
+      rewardPoolTokens {
+        ...Token
+      }
+      rewardPoolTokensOrder
+      vaultSharesTotalSupply
+      underlyingToNativePrice
+      nativeToUSDPrice
+      underlyingAmount
+    }
+    investor {
+      userAddress: id
+    }
+    vaultBalance
+    boostBalance
+    rewardPoolBalances
+    totalBalance
+  }
   clmPositions(
     first: $first
     skip: $skip
     orderBy: id
     orderDirection: asc
-    where: { totalBalance_gt: 0, clm: $clmAddress }
+    where: { totalBalance_gt: 0, clm: $vault_address }
   ) {
     clm {
       vaultAddress: id
@@ -29,11 +65,9 @@ query VaultInvestors($clmAddress: String!, $first: Int! = 1000, $skip: Int! = 0)
       }
       rewardPoolTokensOrder
       managerTotalSupply
-
       token0ToNativePrice
       token1ToNativePrice
       nativeToUSDPrice
-
       underlyingAltAmount0
       underlyingAltAmount1
       underlyingMainAmount0

@@ -1,6 +1,6 @@
 import { type Static, Type } from '@sinclair/typebox';
 import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fastify';
-import { omit } from 'lodash';
+import { max, omit } from 'lodash';
 import { type ChainId, chainIdSchema } from '../../config/chains';
 import type {
   ClassicHarvestDataFragment,
@@ -583,56 +583,95 @@ const getVaultInvestors = async (
       paginate({
         fetchPage: ({ skip, first }) =>
           sdk.VaultInvestors({
-            clmAddress: vault_address,
+            vault_address,
             skip,
             first,
           }),
-        count: res => res.data.clmPositions.length,
+        count: res => max([res.data.clmPositions.length, res.data.classicPositions.length]) || 0,
       })
     )
   );
 
   const positions = res.flatMap(chainRes =>
-    chainRes.flatMap(chainPage => chainPage.data.clmPositions)
+    chainRes.flatMap(chainPage => [
+      ...chainPage.data.classicPositions.map(position => {
+        const sharesToken = position.classic.vaultSharesToken;
+        const underlyingToken = position.classic.underlyingToken;
+        const underlyingToNativePrice = interpretAsDecimal(
+          position.classic.underlyingToNativePrice,
+          18
+        );
+        const nativeToUsd = interpretAsDecimal(position.classic.nativeToUSDPrice, 18);
+        const positionShareBalance = interpretAsDecimal(
+          position.totalBalance,
+          sharesToken.decimals
+        );
+        const vaultBalance = interpretAsDecimal(
+          position.classic.underlyingAmount,
+          underlyingToken.decimals
+        );
+        const vaultTotalSupply = interpretAsDecimal(
+          position.classic.vaultSharesTotalSupply,
+          sharesToken.decimals
+        );
+
+        const positionPercentShare = positionShareBalance.div(vaultTotalSupply);
+        const positionBalance = vaultBalance.mul(positionPercentShare);
+        const positionBalanceUsd = positionBalance.mul(underlyingToNativePrice).mul(nativeToUsd);
+        return {
+          investor_address: position.investor.userAddress,
+          total_shares_balance: positionShareBalance.toFixed(30),
+          underlying_balance0: positionBalance.toFixed(10),
+          underlying_balance1: '0',
+          usd_balance0: positionBalanceUsd.toFixed(10),
+          usd_balance1: '0',
+          usd_balance: positionBalanceUsd.toFixed(10),
+        };
+      }),
+      ...chainPage.data.clmPositions.map(position => {
+        const managerToken = position.clm.managerToken;
+        const token0 = position.clm.underlyingToken0;
+        const token1 = position.clm.underlyingToken1;
+        const token0ToNativePrice = interpretAsDecimal(position.clm.token0ToNativePrice, 18);
+        const token1ToNativePrice = interpretAsDecimal(position.clm.token1ToNativePrice, 18);
+        const nativeToUsd = interpretAsDecimal(position.clm.nativeToUSDPrice, 18);
+        const positionShareBalance = interpretAsDecimal(
+          position.totalBalance,
+          managerToken.decimals
+        );
+        const vaultBalance0 = interpretAsDecimal(
+          position.clm.underlyingAltAmount0,
+          token0.decimals
+        ).plus(interpretAsDecimal(position.clm.underlyingMainAmount0, token0.decimals));
+        const vaultBalance1 = interpretAsDecimal(
+          position.clm.underlyingAltAmount1,
+          token1.decimals
+        ).plus(interpretAsDecimal(position.clm.underlyingMainAmount1, token1.decimals));
+        const vaultTotalSupply = interpretAsDecimal(
+          position.clm.managerTotalSupply,
+          managerToken.decimals
+        );
+
+        const positionPercentShare = positionShareBalance.div(vaultTotalSupply);
+        const positionBalance0 = vaultBalance0.mul(positionPercentShare);
+        const positionBalance1 = vaultBalance1.mul(positionPercentShare);
+        const positionBalance0Usd = positionBalance0.mul(token0ToNativePrice).mul(nativeToUsd);
+        const positionBalance1Usd = positionBalance1.mul(token1ToNativePrice).mul(nativeToUsd);
+        const positionBalanceUsd = positionBalance0Usd.add(positionBalance1Usd);
+        return {
+          investor_address: position.investor.userAddress,
+          total_shares_balance: positionShareBalance.toFixed(30),
+          underlying_balance0: positionBalance0.toFixed(10),
+          underlying_balance1: positionBalance1.toFixed(10),
+          usd_balance0: positionBalance0Usd.toFixed(10),
+          usd_balance1: positionBalance1Usd.toFixed(10),
+          usd_balance: positionBalanceUsd.toFixed(10),
+        };
+      }),
+    ])
   );
 
-  return positions.map(position => {
-    const managerToken = position.clm.managerToken;
-    const token0 = position.clm.underlyingToken0;
-    const token1 = position.clm.underlyingToken1;
-    const token0ToNativePrice = interpretAsDecimal(position.clm.token0ToNativePrice, 18);
-    const token1ToNativePrice = interpretAsDecimal(position.clm.token1ToNativePrice, 18);
-    const nativeToUsd = interpretAsDecimal(position.clm.nativeToUSDPrice, 18);
-    const positionShareBalance = interpretAsDecimal(position.totalBalance, managerToken.decimals);
-    const vaultBalance0 = interpretAsDecimal(
-      position.clm.underlyingAltAmount0,
-      token0.decimals
-    ).plus(interpretAsDecimal(position.clm.underlyingMainAmount0, token0.decimals));
-    const vaultBalance1 = interpretAsDecimal(
-      position.clm.underlyingAltAmount1,
-      token1.decimals
-    ).plus(interpretAsDecimal(position.clm.underlyingMainAmount1, token1.decimals));
-    const vaultTotalSupply = interpretAsDecimal(
-      position.clm.managerTotalSupply,
-      managerToken.decimals
-    );
-
-    const positionPercentShare = positionShareBalance.div(vaultTotalSupply);
-    const positionBalance0 = vaultBalance0.mul(positionPercentShare);
-    const positionBalance1 = vaultBalance1.mul(positionPercentShare);
-    const positionBalance0Usd = positionBalance0.mul(token0ToNativePrice).mul(nativeToUsd);
-    const positionBalance1Usd = positionBalance1.mul(token1ToNativePrice).mul(nativeToUsd);
-    const positionBalanceUsd = positionBalance0Usd.add(positionBalance1Usd);
-    return {
-      investor_address: position.investor.userAddress,
-      total_shares_balance: positionShareBalance.toFixed(30),
-      underlying_balance0: positionBalance0.toFixed(10),
-      underlying_balance1: positionBalance1.toFixed(10),
-      usd_balance0: positionBalance0Usd.toFixed(10),
-      usd_balance1: positionBalance1Usd.toFixed(10),
-      usd_balance: positionBalanceUsd.toFixed(10),
-    };
-  });
+  return positions;
 };
 
 const vaultMoveTicksSchema = Type.Object({

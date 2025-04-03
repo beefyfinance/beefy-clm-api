@@ -113,7 +113,31 @@ const vaultApySchema = Type.Object({
 });
 type VaultApy = Static<typeof vaultApySchema>;
 
-const getVaultApy = (vault: VaultsQuery['clms'][0], periodSeconds: number, now: Date): VaultApy => {
+const getClassicVaultApy = (
+  vault: VaultsQuery['classics'][0],
+  periodSeconds: number,
+  now: Date
+): VaultApy => {
+  const token = vault.underlyingToken;
+
+  const aprState = prepareAprState(
+    vault.collectedFees.map(fee => ({
+      collectedAmount: interpretAsDecimal(fee.compoundedAmount, token.decimals),
+      collectTimestamp: fromUnixTime(fee.timestamp),
+      totalValueLocked: interpretAsDecimal(fee.underlyingAmount, token.decimals),
+    }))
+  );
+  const apr = calculateLastApr(aprState, periodSeconds * 1000, now);
+  return {
+    apr: apr.apr.toString(),
+    apy: apr.apy.toString(),
+  };
+};
+const getClmVaultApy = (
+  vault: VaultsQuery['clms'][0],
+  periodSeconds: number,
+  now: Date
+): VaultApy => {
   const token0 = vault.underlyingToken0;
   const token1 = vault.underlyingToken1;
 
@@ -170,14 +194,18 @@ const getVaults = async (chain: ChainId, period: Period): Promise<Vaults> => {
             skip,
             first,
           }),
-        count: res => max(res.data.clms.map(vault => vault.collectedFees.length)) || 0,
+        count: res =>
+          max([
+            ...res.data.clms.map(vault => vault.collectedFees.length),
+            ...res.data.classics.map(vault => vault.collectedFees.length),
+          ]) || 0,
       })
     )
   );
 
   return res.flatMap(chainRes =>
-    chainRes.flatMap(chainPage =>
-      chainPage.data.clms.map(vault => {
+    chainRes.flatMap(chainPage => [
+      ...chainPage.data.clms.map(vault => {
         const token1 = vault.underlyingToken1;
         return {
           vaultAddress: vault.vaultAddress,
@@ -187,10 +215,21 @@ const getVaults = async (chain: ChainId, period: Period): Promise<Vaults> => {
             token1.decimals
           ).toString(),
           priceRangeMax1: interpretAsDecimal(vault.priceRangeMax1, token1.decimals).toString(),
-          ...getVaultApy(vault, periodSeconds, now),
+          ...getClmVaultApy(vault, periodSeconds, now),
         };
-      })
-    )
+      }),
+      ...chainPage.data.classics
+        .filter(vault => vault.collectedFees.length > 0)
+        .map(vault => {
+          return {
+            vaultAddress: vault.vaultAddress,
+            priceRangeMin1: '1',
+            priceOfToken0InToken1: '1',
+            priceRangeMax1: '1',
+            ...getClassicVaultApy(vault, periodSeconds, now),
+          };
+        }),
+    ])
   );
 };
 
