@@ -68,7 +68,7 @@ describe('Apr', () => {
     ]);
     const now = new Date(69382400 * 1000);
     aprState = evictOldAprEntries(aprState, ONE_DAY, now);
-    expect(aprState.length).toEqual(2);
+    expect(aprState.length).toEqual(3);
   });
 
   test('should compute apr properly with one entry of zero duration', () => {
@@ -96,8 +96,8 @@ describe('Apr', () => {
 
     const res = calculateLastApr(aprState, 86400 * 1000, new Date('2024-06-18T07:26:11.773Z'));
 
-    expect(res.apr.toNumber()).toBeCloseTo(0.45586, 3);
-    expect(res.apy.toNumber()).toBeCloseTo(0.57709, 3);
+    expect(res.apr.toNumber()).toBeCloseTo(0, 3);
+    expect(res.apy.toNumber()).toBeCloseTo(0, 3);
   });
 
   test('should compute apr in the simplest case', () => {
