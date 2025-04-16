@@ -85,7 +85,7 @@ describe('Apr', () => {
     expect(res.apr.toNumber()).toEqual(ZERO_BD.toNumber());
   });
 
-  test('Should calculate APR with one entry only, non regression for 0% apr on uniswap-cow-arb-weth-usdc.e-prod', async () => {
+  test('Should calculate APR with one entry only, should be 0', async () => {
     const aprState = [
       {
         collectedAmount: new Decimal('0.00032000437230484107316'),
@@ -98,6 +98,24 @@ describe('Apr', () => {
 
     expect(res.apr.toNumber()).toBeCloseTo(0, 3);
     expect(res.apy.toNumber()).toBeCloseTo(0, 3);
+  });
+
+  test('Should calculate APR with 1 entry in current period with additional entry previous to it', async () => {
+    const aprState = [
+      {
+        collectedAmount: new Decimal('1.52862409877410972716'),
+        collectTimestamp: new Date('2025-04-10T00:49:05.000Z'), //Entry happening over 24h from desired period
+        totalValueLocked: new Decimal('23960.55152220372208423456'),
+      },
+      {
+        collectedAmount: new Decimal('156.67283090769483794841'),
+        collectTimestamp: new Date('2025-04-12T11:28:58.000Z'), //Only entry falling into the 1day period
+        totalValueLocked: new Decimal('22026.66919334588149167308'),
+      },
+    ];
+
+    const res = calculateLastApr(aprState, 86400 * 1000, new Date('2025-04-12T11:28:58.000Z'));
+    expect(res.apr.toNumber()).toBeCloseTo(0.9763914502623975, 3);
   });
 
   test('should compute apr in the simplest case', () => {
