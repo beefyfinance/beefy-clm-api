@@ -4,6 +4,7 @@ import {
   aprToApy,
   calculateLastApr,
   evictOldAprEntries,
+  mergeUnique,
   prepareAprState,
 } from './apr';
 
@@ -17,6 +18,60 @@ describe('Apr', () => {
     const now = new Date(ONE_WEEK);
     const res = calculateLastApr(aprState, ONE_DAY, now);
     expect(res.apr.toNumber()).toEqual(ZERO_BD.toNumber());
+  });
+
+  test('merges arrays correctly', () => {
+    const baseArray: {
+      __typename?: 'ClassicHarvestEvent';
+      timestamp: string;
+      underlyingAmount: string;
+      compoundedAmount: string;
+      underlyingToNativePrice: string;
+      nativeToUSDPrice: string;
+    }[] = [
+      {
+        timestamp: '1711201231',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+      {
+        timestamp: '1711201235',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+    ];
+
+    const extraArray: {
+      __typename?: 'ClassicHarvestEvent';
+      timestamp: string;
+      underlyingAmount: string;
+      compoundedAmount: string;
+      underlyingToNativePrice: string;
+      nativeToUSDPrice: string;
+    }[] = [
+      {
+        //duplicate item, shouldn't be added
+        timestamp: '1711201231',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+      {
+        timestamp: '1711201236',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+    ];
+
+    const mergedArray = mergeUnique(baseArray, extraArray);
+    expect(mergedArray.length).toEqual(3);
   });
 
   test('do not crash when TVL is zero now', () => {

@@ -25,6 +25,17 @@ query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
       underlyingToNativePrice
       nativeToUSDPrice
     }
+    latestCollectedFees: harvests(
+      first: 5
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      timestamp
+      underlyingAmount
+      compoundedAmount
+      underlyingToNativePrice
+      nativeToUSDPrice
+    }
   }
   clms(first: $first, skip: $skip, where: { lifecycle_not: INITIALIZING }) {
     vaultAddress: id
@@ -40,6 +51,19 @@ query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
     collectedFees: collections(
       first: 1000
       where: { timestamp_gte: $since }
+      orderBy: timestamp
+      orderDirection: desc
+    ) {
+      timestamp
+      underlyingAmount0
+      underlyingAmount1
+      collectedAmount0
+      collectedAmount1
+      token0ToNativePrice
+      token1ToNativePrice
+    }
+    latestCollectedFees: collections(
+      first: 2
       orderBy: timestamp
       orderDirection: desc
     ) {
