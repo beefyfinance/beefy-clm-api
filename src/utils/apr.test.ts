@@ -4,6 +4,7 @@ import {
   aprToApy,
   calculateLastApr,
   evictOldAprEntries,
+  mergeUnique,
   prepareAprState,
 } from './apr';
 
@@ -17,6 +18,60 @@ describe('Apr', () => {
     const now = new Date(ONE_WEEK);
     const res = calculateLastApr(aprState, ONE_DAY, now);
     expect(res.apr.toNumber()).toEqual(ZERO_BD.toNumber());
+  });
+
+  test('merges arrays correctly', () => {
+    const baseArray: {
+      __typename?: 'ClassicHarvestEvent';
+      timestamp: string;
+      underlyingAmount: string;
+      compoundedAmount: string;
+      underlyingToNativePrice: string;
+      nativeToUSDPrice: string;
+    }[] = [
+      {
+        timestamp: '1711201231',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+      {
+        timestamp: '1711201235',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+    ];
+
+    const extraArray: {
+      __typename?: 'ClassicHarvestEvent';
+      timestamp: string;
+      underlyingAmount: string;
+      compoundedAmount: string;
+      underlyingToNativePrice: string;
+      nativeToUSDPrice: string;
+    }[] = [
+      {
+        //duplicate item, shouldn't be added
+        timestamp: '1711201231',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+      {
+        timestamp: '1711201236',
+        underlyingAmount: '100',
+        compoundedAmount: '100',
+        underlyingToNativePrice: '1',
+        nativeToUSDPrice: '1',
+      },
+    ];
+
+    const mergedArray = mergeUnique(baseArray, extraArray);
+    expect(mergedArray.length).toEqual(3);
   });
 
   test('do not crash when TVL is zero now', () => {
@@ -68,7 +123,7 @@ describe('Apr', () => {
     ]);
     const now = new Date(69382400 * 1000);
     aprState = evictOldAprEntries(aprState, ONE_DAY, now);
-    expect(aprState.length).toEqual(2);
+    expect(aprState.length).toEqual(3);
   });
 
   test('should compute apr properly with one entry of zero duration', () => {
@@ -85,7 +140,7 @@ describe('Apr', () => {
     expect(res.apr.toNumber()).toEqual(ZERO_BD.toNumber());
   });
 
-  test('Should calculate APR with one entry only, non regression for 0% apr on uniswap-cow-arb-weth-usdc.e-prod', async () => {
+  test('Should calculate APR with one entry only, should be 0', async () => {
     const aprState = [
       {
         collectedAmount: new Decimal('0.00032000437230484107316'),
@@ -96,8 +151,26 @@ describe('Apr', () => {
 
     const res = calculateLastApr(aprState, 86400 * 1000, new Date('2024-06-18T07:26:11.773Z'));
 
-    expect(res.apr.toNumber()).toBeCloseTo(0.45586, 3);
-    expect(res.apy.toNumber()).toBeCloseTo(0.57709, 3);
+    expect(res.apr.toNumber()).toBeCloseTo(0, 3);
+    expect(res.apy.toNumber()).toBeCloseTo(0, 3);
+  });
+
+  test('Should calculate APR with 1 entry in current period with additional entry previous to it', async () => {
+    const aprState = [
+      {
+        collectedAmount: new Decimal('1.52862409877410972716'),
+        collectTimestamp: new Date('2025-04-10T00:49:05.000Z'), //Entry happening over 24h from desired period
+        totalValueLocked: new Decimal('23960.55152220372208423456'),
+      },
+      {
+        collectedAmount: new Decimal('156.67283090769483794841'),
+        collectTimestamp: new Date('2025-04-12T11:28:58.000Z'), //Only entry falling into the 1day period
+        totalValueLocked: new Decimal('22026.66919334588149167308'),
+      },
+    ];
+
+    const res = calculateLastApr(aprState, 86400 * 1000, new Date('2025-04-12T11:28:58.000Z'));
+    expect(res.apr.toNumber()).toBeCloseTo(0.9763914502623975, 3);
   });
 
   test('should compute apr in the simplest case', () => {

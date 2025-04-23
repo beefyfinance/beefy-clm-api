@@ -6,7 +6,7 @@ import type { VaultsQuery } from '../../queries/codegen/sdk';
 import { addressSchema } from '../../schema/address';
 import { bigDecimalSchema, timestampNumberSchema } from '../../schema/bigint';
 import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
-import { calculateLastApr, prepareAprState } from '../../utils/apr';
+import { calculateLastApr, mergeUnique, prepareAprState } from '../../utils/apr';
 import { getAsyncCache } from '../../utils/async-lock';
 import { fromUnixTime, getUnixTime } from '../../utils/date';
 import { interpretAsDecimal } from '../../utils/decimal';
@@ -120,8 +120,9 @@ const getClassicVaultApy = (
 ): VaultApy => {
   const token = vault.underlyingToken;
 
+  const collectEvents = mergeUnique(vault.collectedFees, vault.latestCollectedFees);
   const aprState = prepareAprState(
-    vault.collectedFees.map(fee => ({
+    collectEvents.map(fee => ({
       collectedAmount: interpretAsDecimal(fee.compoundedAmount, token.decimals),
       collectTimestamp: fromUnixTime(fee.timestamp),
       totalValueLocked: interpretAsDecimal(fee.underlyingAmount, token.decimals),
@@ -141,8 +142,9 @@ const getClmVaultApy = (
   const token0 = vault.underlyingToken0;
   const token1 = vault.underlyingToken1;
 
+  const collectEvents = mergeUnique(vault.collectedFees, vault.latestCollectedFees);
   const aprState = prepareAprState(
-    vault.collectedFees.map(fee => ({
+    collectEvents.map(fee => ({
       collectedAmount: interpretAsDecimal(fee.collectedAmount0, token0.decimals)
         .times(interpretAsDecimal(fee.token0ToNativePrice, 18))
         .plus(

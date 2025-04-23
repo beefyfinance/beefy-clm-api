@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import { isEqual } from 'lodash';
 import { getLoggerFor } from './log';
 
 const logger = getLoggerFor('AprState');
@@ -36,9 +37,23 @@ export function prepareAprState(state: AprState): AprState {
   return cleanedEntries;
 }
 
+// Keeps entry prior to the threshold so we can compute the APR since then
 export function evictOldAprEntries(state: AprState, periodMs: number, now: Date): AprState {
   const threshold = now.getTime() - periodMs;
-  return state.filter(entry => entry.collectTimestamp.getTime() >= threshold);
+
+  // We keep the last entry prior to the threshold so we can compute the APR since then
+  const firstEntryAfterThresholdIndex = state.findIndex(
+    entry => entry.collectTimestamp.getTime() >= threshold
+  );
+  if (firstEntryAfterThresholdIndex === -1) {
+    return [];
+  }
+
+  return state.slice(
+    firstEntryAfterThresholdIndex - 1 >= 0
+      ? firstEntryAfterThresholdIndex - 1
+      : firstEntryAfterThresholdIndex
+  );
 }
 
 export function calculateLastApr(
@@ -65,29 +80,9 @@ export function calculateLastApr(
   state = evictOldAprEntries(state, periodMs, now);
 
   // special cases for 0 or 1 entries after eviction
-  if (state.length === 0) {
+  if (state.length <= 1) {
     return { apr: ZERO_BD, apy: ZERO_BD };
   }
-
-  if (state.length === 1) {
-    const entry = state[0];
-    const sliceDuration = new Decimal(now.getTime() - entry.collectTimestamp.getTime());
-    const sliceCollected = entry.collectedAmount;
-    const sliceTvl = entry.totalValueLocked;
-
-    if (sliceTvl.isZero()) {
-      return { apr: ZERO_BD, apy: ZERO_BD };
-    }
-    if (sliceDuration.isZero()) {
-      return { apr: ZERO_BD, apy: ZERO_BD };
-    }
-
-    const rewardRate = sliceCollected.div(sliceTvl).div(sliceDuration);
-    const apr = rewardRate.times(ONE_YEAR);
-    const apy = aprToApy(apr, ONE_YEAR / periodMs);
-    return { apr, apy };
-  }
-
   // for each time slice, we get the APR and duration for it
   const APRs = new Array<Decimal>();
   const durations = new Array<Decimal>();
@@ -145,4 +140,17 @@ export function aprToApy(apr: Decimal, annualCompounds: number): Decimal {
   // APY = [1 + (r ÷ n)] ^ n – 1
   // where r is the APR and n is the number of compounding periods
   return apr.div(annualCompounds).plus(1).pow(annualCompounds).minus(1);
+}
+
+export function mergeUnique<T>(baseArray: T[], extraArray: T[]): T[] {
+  const result = [...baseArray];
+
+  for (const item of extraArray) {
+    // only add if no existing item matches
+    if (!result.some(existing => isEqual(existing, item))) {
+      result.push(item);
+    }
+  }
+
+  return result;
 }
