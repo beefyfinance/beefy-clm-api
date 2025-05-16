@@ -17,6 +17,7 @@ export enum ChainId {
   optimism = 'optimism',
   polygon = 'polygon',
   rootstock = 'rootstock',
+  saga = 'saga',
   scroll = 'scroll',
   sei = 'sei',
   sonic = 'sonic',
