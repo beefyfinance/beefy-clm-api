@@ -407,4 +407,16 @@ describe('Apr', () => {
     expect(aprToApy(new Decimal('0.06'), 365).toNumber()).toBeCloseTo(0.0618, 3);
     expect(aprToApy(new Decimal('0.06'), 12).toNumber()).toBeCloseTo(0.0617, 3);
   });
+
+  test('Should be performant', () => {
+    const apr = new Decimal('0.06');
+    const annualCompounds = 12;
+    const start = performance.now();
+    for (let i = 0; i < 1_000_000; i++) {
+      aprToApy(apr, annualCompounds);
+    }
+    const end = performance.now();
+    const duration = end - start;
+    expect(duration).toBeLessThan(1000);
+  });
 });

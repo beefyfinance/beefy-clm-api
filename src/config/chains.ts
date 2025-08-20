@@ -22,7 +22,6 @@ export enum ChainId {
   scroll = 'scroll',
   sei = 'sei',
   sonic = 'sonic',
-  unichain = 'unichain',
   zksync = 'zksync',
 }
 

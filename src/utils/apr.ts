@@ -139,7 +139,8 @@ export function calculateLastApr(
 export function aprToApy(apr: Decimal, annualCompounds: number): Decimal {
   // APY = [1 + (r ÷ n)] ^ n – 1
   // where r is the APR and n is the number of compounding periods
-  return apr.div(annualCompounds).plus(1).pow(annualCompounds).minus(1);
+  // return apr.div(annualCompounds).plus(1).pow(annualCompounds).minus(1);
+  return new Decimal((apr.toNumber() / annualCompounds + 1) ** annualCompounds - 1);
 }
 
 export function mergeUnique<T>(baseArray: T[], extraArray: T[]): T[] {
