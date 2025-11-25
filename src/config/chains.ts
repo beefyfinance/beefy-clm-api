@@ -14,6 +14,7 @@ export enum ChainId {
   manta = 'manta',
   mantle = 'mantle',
   mode = 'mode',
+  monad = 'monad',
   moonbeam = 'moonbeam',
   optimism = 'optimism',
   plasma = 'plasma',
