@@ -8,6 +8,7 @@ const config: CodegenConfig = {
     'src/queries/codegen/sdk.ts': {
       plugins: ['typescript', 'typescript-operations', 'typescript-graphql-request'],
       config: {
+        addUnderscoreToArgsType: true, // avoid duplicate Args type names (e.g. ClmPositionSnapshotsArgs)
         rawRequest: true,
         strictScalars: true,
         scalars: {
