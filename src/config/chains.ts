@@ -13,6 +13,7 @@ export enum ChainId {
   lisk = 'lisk',
   manta = 'manta',
   mantle = 'mantle',
+  megaeth = 'megaeth',
   mode = 'mode',
   monad = 'monad',
   moonbeam = 'moonbeam',
