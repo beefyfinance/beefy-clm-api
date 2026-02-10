@@ -14,6 +14,10 @@ fragment InvestorTimelineClmPositionClm on CLM {
     ...Token
   }
   rewardPoolTokensOrder
+  rewardTokens {
+    ...Token
+  }
+  rewardTokensOrder
   underlyingToken0 {
     ...Token
   }
@@ -58,12 +62,6 @@ fragment InvestorTimelineClmPositionInteraction on ClmPositionInteraction {
   token0ToNativePrice
   token1ToNativePrice
   nativeToUSDPrice
-  clm {
-    rewardTokensOrder
-    rewardTokens {
-      ...Token
-    }
-  }
   type
 }
 

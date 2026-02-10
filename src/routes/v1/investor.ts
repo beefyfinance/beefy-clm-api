@@ -205,7 +205,7 @@ function clmInteractionToOutput(interaction: TimelineClmInteraction): TimelineCl
     reward_pool_claim_details: interaction.rewardBalancesDelta.map((rewardBalanceDelta, i) => ({
       claimed_amount: rewardBalanceDelta.toString(),
       reward_to_usd: interaction.rewardsToUsd[i].toString(),
-      reward_address: interaction.clm.rewardTokens[i],
+      reward_address: interaction.rewardTokens[i].address,
     })),
     claimed_reward_pool: interaction.claimedRewardPool?.toString(),
   };
