@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "license": "gpl-3.0",
   "private": true,
-  "engines": {
-    "node": "^20.10.0"
-  },
   "scripts": {
     "prepare": "husky",
     "build": "tsc",
@@ -16,13 +13,13 @@
     "format": "biome check",
     "format:fix": "biome check --write",
     "format:fix:unsafe": "biome check --write --unsafe",
-    "test": "npm run test:ts && npm run test:unit && npm run test:lint",
+    "test": "pnpm run test:ts && pnpm run test:unit && pnpm run test:lint",
     "test:unit": "jest",
     "test:ts": "tsc --noEmit",
     "test:lint": "biome ci",
     "package:check": "ncu",
-    "package:fix": "ncu -u && npm install",
-    "postinstall": "npm --silent run codegen",
+    "package:fix": "ncu -u && pnpm install",
+    "postinstall": "pnpm --silent run codegen",
     "codegen": "graphql-codegen --config ./src/queries/codegen/codegen.ts",
     "lint-staged": "lint-staged"
   },
@@ -70,5 +67,9 @@
     "ts-node-dev": "^2.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
+  },
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": "26.x"
   }
 }

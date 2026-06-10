@@ -4,7 +4,7 @@ import FastifyHelmet from '@fastify/helmet';
 import FastifyRateLimit from '@fastify/rate-limit';
 import FastifyUnderPressure from '@fastify/under-pressure';
 import Decimal from 'decimal.js';
-import Fastify from 'fastify';
+import Fastify, { type FastifyBaseLogger } from 'fastify';
 import { API_CORS_ORIGIN, API_ENV, API_PORT, API_RATE_LIMIT } from './config/env';
 import routes from './routes/index';
 import { allowedToBypassRateLimit } from './utils/auth';
@@ -20,7 +20,7 @@ Decimal.set({
 });
 
 const server = Fastify({
-  logger: defaultLogger,
+  logger: defaultLogger as unknown as FastifyBaseLogger,
   trustProxy: true,
 });
 
