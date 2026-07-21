@@ -4,6 +4,7 @@ import { chainIdSchema } from '../../config/chains';
 import { addressSchema, transactionHashSchema } from '../../schema/address';
 import { bigDecimalSchema } from '../../schema/bigint';
 import { getAsyncCache } from '../../utils/async-lock';
+import { publicCacheControl } from '../../utils/cache-control';
 import type { Address, Hex } from '../../utils/scalar-types';
 import {
   type TimelineClassicInteraction,
@@ -37,7 +38,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams }>(
       '/:investor_address/timeline',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(120) } },
       async (request, reply) => {
         const { investor_address } = request.params;
         const res = await asyncCache.wrap(

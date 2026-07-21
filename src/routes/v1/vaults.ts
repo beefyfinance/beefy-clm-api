@@ -8,6 +8,7 @@ import { bigDecimalSchema, timestampNumberSchema } from '../../schema/bigint';
 import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
 import { calculateLastApr, mergeUnique, prepareAprState } from '../../utils/apr';
 import { getAsyncCache } from '../../utils/async-lock';
+import { publicCacheControl } from '../../utils/cache-control';
 import { fromUnixTime, getUnixTime } from '../../utils/date';
 import { interpretAsDecimal } from '../../utils/decimal';
 import type { Address, Hex } from '../../utils/scalar-types';
@@ -43,16 +44,20 @@ export default async function (
       },
     };
 
-    instance.get<{ Params: UrlParams }>('/:chain/:period', { schema }, async (request, reply) => {
-      const { chain, period } = request.params;
+    instance.get<{ Params: UrlParams }>(
+      '/:chain/:period',
+      { schema, config: { cacheControl: publicCacheControl(30) } },
+      async (request, reply) => {
+        const { chain, period } = request.params;
 
-      const result = await asyncCache.wrap(
-        `vaults:${chain}:${period}`,
-        30 * 1000,
-        async () => await getVaults(chain, period)
-      );
-      reply.send(result);
-    });
+        const result = await asyncCache.wrap(
+          `vaults:${chain}:${period}`,
+          30 * 1000,
+          async () => await getVaults(chain, period)
+        );
+        reply.send(result);
+      }
+    );
   }
 
   // Vaults harvest data
@@ -87,7 +92,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams; Querystring: QueryParams }>(
       '/:chain/harvests/:since',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(30) } },
       async (request, reply) => {
         const { chain, since } = request.params;
         const roundedSince = BigInt(since) / BigInt(60); // round to the minute

@@ -53,9 +53,17 @@ server.register(async (instance, _opts, done) => {
         typeof value === 'bigint' ? value.toString() : value
       )
     )
-    .addHook('onSend', async (_req, reply) => {
+    .addHook('onSend', async (req, reply) => {
       if (reply.raw.statusCode !== 200) {
         reply.header('cache-control', 'no-cache, no-store, must-revalidate');
+        return;
+      }
+      if (req.method !== 'GET') {
+        return;
+      }
+      const cacheControl = req.routeOptions.config.cacheControl;
+      if (cacheControl) {
+        reply.header('cache-control', cacheControl);
       }
     })
     .setErrorHandler((error, _request, reply) => {

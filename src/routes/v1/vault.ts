@@ -12,6 +12,7 @@ import { bigDecimalSchema, timestampStrSchema } from '../../schema/bigint';
 import { type Period, getPeriodSeconds, periodSchema } from '../../schema/period';
 import { isDefined } from '../../utils/array';
 import { getAsyncCache } from '../../utils/async-lock';
+import { publicCacheControl } from '../../utils/cache-control';
 import { interpretAsDecimal } from '../../utils/decimal';
 import { sortEntitiesByOrderList } from '../../utils/entity-order';
 import { FriendlyError } from '../../utils/error';
@@ -54,7 +55,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams }>(
       '/:chain/:vault_address/price',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(30) } },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
         const result = await asyncCache.wrap(
@@ -93,7 +94,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams }>(
       '/:chain/:vault_address/harvests',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(30) } },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
         const result = await asyncCache.wrap(
@@ -135,7 +136,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams }>(
       '/:chain/:vault_address/prices/:period/:since',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(30) } },
       async (request, reply) => {
         const { chain, vault_address, period, since } = request.params;
         const roundedSince = BigInt(since) / BigInt(60); // round to the minute
@@ -180,7 +181,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams }>(
       '/:chain/:vault_address/prices/range/:period',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(30) } },
       async (request, reply) => {
         const { chain, vault_address, period } = request.params;
         const result = await asyncCache.wrap(
@@ -220,7 +221,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams }>(
       '/:chain/:vault_address/investors',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(30) } },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
         const result = await asyncCache.wrap(
@@ -266,7 +267,7 @@ export default async function (
 
     instance.get<{ Params: UrlParams; Querystring: QueryString }>(
       '/:chain/:vault_address/move-ticks',
-      { schema },
+      { schema, config: { cacheControl: publicCacheControl(30) } },
       async (request, reply) => {
         const { chain, vault_address } = request.params;
         const { start_time, end_time } = request.query;

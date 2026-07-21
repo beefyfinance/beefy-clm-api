@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyPluginOptions, FastifySchema } from 'fasti
 import { type ChainId, chainIdAsKeySchema } from '../../config/chains';
 import { timestampNumberSchema } from '../../schema/bigint';
 import { getAsyncCache } from '../../utils/async-lock';
+import { publicCacheControl } from '../../utils/cache-control';
 import { executeOnAllSdks, sdkContextSchema } from '../../utils/sdk';
 
 export default async function (
@@ -21,12 +22,16 @@ export default async function (
       },
     };
 
-    instance.get('', { schema }, async (_, reply) => {
-      const res = await asyncCache.wrap('status', 60 * 1000, async () => {
-        return await getStatus();
-      });
-      reply.send(res);
-    });
+    instance.get(
+      '',
+      { schema, config: { cacheControl: publicCacheControl(60) } },
+      async (_, reply) => {
+        const res = await asyncCache.wrap('status', 60 * 1000, async () => {
+          return await getStatus();
+        });
+        reply.send(res);
+      }
+    );
   }
 
   done();
