@@ -173,6 +173,48 @@ describe('Apr', () => {
     expect(res.apr.toNumber()).toBeCloseTo(0.9763914502623975, 3);
   });
 
+  // Pancake strategies emit ClaimedFees + ClaimedRewards per harvest: two rows, same timestamp
+  const PERIOD_1_1D = 95040 * 1000;
+  const pairedHarvest = (ts: string, collected: string, tvl: string) => [
+    {
+      collectedAmount: ZERO_BD,
+      collectTimestamp: new Date(ts),
+      totalValueLocked: new Decimal(tvl),
+    },
+    {
+      collectedAmount: new Decimal(collected),
+      collectTimestamp: new Date(ts),
+      totalValueLocked: new Decimal(tvl),
+    },
+  ];
+
+  test('Paired rows from a single in-period harvest with no anchor should be 0', () => {
+    const inPeriod = pairedHarvest('2026-10-02T02:00:00.000Z', '0.0047', '162.4');
+    const latestTwoRows = pairedHarvest('2026-10-02T02:00:00.000Z', '0.0047', '162.4');
+    const aprState = prepareAprState(mergeUnique(inPeriod, latestTwoRows));
+
+    expect(aprState.length).toBe(1);
+    const res = calculateLastApr(aprState, PERIOD_1_1D, new Date('2026-10-02T18:30:00.000Z'));
+    expect(res.apr.toNumber()).toBe(0);
+  });
+
+  test('Paired rows from a single in-period harvest with a pre-period anchor should match unpaired', () => {
+    const now = new Date('2026-10-02T18:30:00.000Z');
+    const anchor = pairedHarvest('2026-10-01T03:30:00.000Z', '0.0061', '162.3')[0];
+    const inPeriod = pairedHarvest('2026-10-02T02:00:00.000Z', '0.0047', '162.4');
+
+    const paired = calculateLastApr(
+      prepareAprState(mergeUnique(inPeriod, [anchor])),
+      PERIOD_1_1D,
+      now
+    );
+    const unpaired = calculateLastApr(prepareAprState([anchor, inPeriod[1]]), PERIOD_1_1D, now);
+
+    expect(paired.apr.toNumber()).toBeGreaterThan(0);
+    expect(paired.apr.toNumber()).toBeCloseTo(unpaired.apr.toNumber(), 10);
+    expect(paired.apy.toNumber()).toBeCloseTo(unpaired.apy.toNumber(), 10);
+  });
+
   test('should compute apr in the simplest case', () => {
     const aprState = prepareAprState([
       {

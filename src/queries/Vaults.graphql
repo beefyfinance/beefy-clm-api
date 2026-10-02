@@ -62,8 +62,10 @@ query Vaults($since: BigInt!, $first: Int = 1000, $skip: Int = 0) {
       token0ToNativePrice
       token1ToNativePrice
     }
+    # anchor: last collection before the period
     latestCollectedFees: collections(
-      first: 2
+      first: 1
+      where: { timestamp_lt: $since }
       orderBy: timestamp
       orderDirection: desc
     ) {

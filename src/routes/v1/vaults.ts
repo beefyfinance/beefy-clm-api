@@ -11,6 +11,7 @@ import { getAsyncCache } from '../../utils/async-lock';
 import { publicCacheControl } from '../../utils/cache-control';
 import { fromUnixTime, getUnixTime } from '../../utils/date';
 import { interpretAsDecimal } from '../../utils/decimal';
+import { getLoggerFor } from '../../utils/log';
 import type { Address, Hex } from '../../utils/scalar-types';
 import { getSdksForChain, paginate } from '../../utils/sdk';
 import { setOpts } from '../../utils/typebox';
@@ -139,6 +140,11 @@ const getClassicVaultApy = (
     apy: apr.apy.toString(),
   };
 };
+const logger = getLoggerFor('vaults');
+
+// Must match `first` on `collectedFees` in Vaults.graphql
+const CLM_COLLECTIONS_PAGE_SIZE = 1000;
+
 const getClmVaultApy = (
   vault: VaultsQuery['clms'][0],
   periodSeconds: number,
@@ -147,7 +153,12 @@ const getClmVaultApy = (
   const token0 = vault.underlyingToken0;
   const token1 = vault.underlyingToken1;
 
-  const collectEvents = mergeUnique(vault.collectedFees, vault.latestCollectedFees);
+  // skip the anchor when in-period rows are truncated, otherwise the first slice spans the gap
+  const capped = vault.collectedFees.length >= CLM_COLLECTIONS_PAGE_SIZE;
+  if (capped) {
+    logger.warn(`CLM ${vault.vaultAddress}: collectedFees hit the page cap, skipping anchor`);
+  }
+  const collectEvents = mergeUnique(vault.collectedFees, capped ? [] : vault.latestCollectedFees);
   const aprState = prepareAprState(
     collectEvents.map(fee => ({
       collectedAmount: interpretAsDecimal(fee.collectedAmount0, token0.decimals)
